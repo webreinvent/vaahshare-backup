@@ -11,8 +11,10 @@ node_modules
 dist
 dist-ssr
 dist-electron
-release
+
 *.local
+
+mac-arm64
 
 # Editor directories and files
 .vscode/*

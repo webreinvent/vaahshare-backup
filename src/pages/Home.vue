@@ -1,12 +1,23 @@
-<script setup lang="ts">
+<script setup>
+import {useRootStore} from '../stores/root'
 
 const { t } = useI18n();
+
+const root = useRootStore();
+
 </script>
 
 <template>
   <div class="text-center">
 
     <h1>Home Page</h1>
+
+
+    {{root.count}}
+
+    <button @click="root.test()">Increase Count</button>
+
+
 
     <p class="text-center mt-6 flex items-center justify-center">
 

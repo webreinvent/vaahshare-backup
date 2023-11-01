@@ -4,14 +4,14 @@ import { createI18n } from 'vue-i18n';
 import './style.css';
 import App from './App.vue';
 import './samples/node-api';
-import router from './router';
+import router from './router/index';
 
 const app = createApp(App);
 
 const messages = Object.fromEntries(
   Object.entries(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    import.meta.glob<{ default: any }>('./locales/*.json', {
+    import.meta.glob('./locales/*.json', {
       eager: true,
     })
   ).map(([key, value]) => {

@@ -1,13 +1,36 @@
-import { createApp } from 'vue'
-import './style.css'
-import App from './App.vue'
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import { createI18n } from 'vue-i18n';
+import './style.css';
+import App from './App.vue';
+import './samples/node-api';
+import router from './router';
 
-createApp(App).mount('#app').$nextTick(() => {
-  // Remove Preload scripts loading
-  postMessage({ payload: 'removeLoading' }, '*')
+const app = createApp(App);
 
-  // Use contextBridge
-  window.ipcRenderer.on('main-process-message', (_event, message) => {
-    console.log(message)
+const messages = Object.fromEntries(
+  Object.entries(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    import.meta.glob<{ default: any }>('./locales/*.json', {
+      eager: true,
+    })
+  ).map(([key, value]) => {
+    return [key.slice(10, -5), value.default];
   })
-})
+);
+
+app.use(
+  createI18n({
+    legacy: false,
+    locale: 'en',
+    fallbackLocale: 'en',
+    warnHtmlMessage: false,
+    messages,
+  })
+);
+app.use(createPinia());
+app.use(router);
+
+app.mount('#app').$nextTick(() => {
+  postMessage({ payload: 'removeLoading' }, '*');
+});

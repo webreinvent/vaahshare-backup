@@ -1,38 +1,44 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { useCounterStore } from '../stores/counter.store';
 
-defineProps<{ msg: string }>()
+defineProps<{ msg: string }>();
 
-const count = ref(0)
+const counterStore = useCounterStore();
+
+const { t } = useI18n();
 </script>
 
 <template>
-  <h1>{{ msg }}</h1>
+  <div class="flex flex-col gap-2">
+    <h1 class="text-lg">{{ msg }}</h1>
 
-  <div class="card">
-    <button type="button" @click="count++">count is {{ count }}</button>
     <p>
-      Edit
-      <code>components/HelloWorld.vue</code> to test HMR
+      {{ t('homepage.recommendedIdeSetup') }}
+      <a href="https://code.visualstudio.com/" target="_blank">VS Code</a>
+      +
+      <a href="https://github.com/johnsoncodehk/volar" target="_blank">Volar</a>
     </p>
+
+    <p v-html="t('homepage.seeForMoreInfo')" />
+
+    <p>
+      <a href="https://vitejs.dev/guide/features.html" target="_blank">
+        Vite Docs
+      </a>
+      |
+      <a href="https://v3.vuejs.org/" target="_blank">Vue 3 Docs</a>
+    </p>
+
+    <div class="my-5">
+      <button
+        type="button"
+        class="ring-2 dark:ring-1 px-3 py-1 rounded ring-green-300 hover:ring-2 hover:ring-green-500 transition text-green-500"
+        @click="counterStore.increment"
+      >
+        {{ t('homepage.countIs') }}: {{ counterStore.count }}
+      </button>
+    </div>
+
+    <p v-html="t('homepage.toTestHotModule')" />
   </div>
-
-  <p>
-    Check out
-    <a href="https://vuejs.org/guide/quick-start.html#local" target="_blank"
-      >create-vue</a
-    >, the official Vue + Vite starter
-  </p>
-  <p>
-    Install
-    <a href="https://github.com/vuejs/language-tools" target="_blank">Volar</a>
-    in your IDE for a better DX
-  </p>
-  <p class="read-the-docs">Click on the Vite and Vue logos to learn more</p>
 </template>
-
-<style scoped>
-.read-the-docs {
-  color: #888;
-}
-</style>

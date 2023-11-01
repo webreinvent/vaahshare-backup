@@ -1,4 +1,5 @@
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import {app, BrowserWindow, ContextBridge, shell,
+  ipcMain, screen, desktopCapturer, ipcRenderer} from 'electron';
 import { release } from 'node:os';
 import { join } from 'node:path';
 
@@ -34,11 +35,13 @@ if (!app.requestSingleInstanceLock()) {
 // Read more on https://www.electronjs.org/docs/latest/tutorial/security
 // process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 
-let win: BrowserWindow | null = null;
+let win = null;
 // Here, you can also use other preload
 const preload = join(__dirname, '../preload/index.js');
 const url = process.env.VITE_DEV_SERVER_URL;
 const indexHtml = join(process.env.DIST, 'index.html');
+
+
 
 async function createWindow() {
   win = new BrowserWindow({
@@ -73,7 +76,12 @@ async function createWindow() {
     if (url.startsWith('https:')) shell.openExternal(url);
     return { action: 'deny' };
   });
+
+
+
 }
+
+
 
 app.whenReady().then(createWindow);
 
@@ -91,6 +99,9 @@ app.on('second-instance', () => {
 });
 
 app.on('activate', () => {
+
+
+
   const allWindows = BrowserWindow.getAllWindows();
   if (allWindows.length) {
     allWindows[0].focus();
@@ -114,4 +125,14 @@ ipcMain.handle('open-win', (_, arg) => {
   } else {
     childWindow.loadFile(indexHtml, { hash: arg });
   }
+});
+
+
+ipcMain.on('vaah-capture-screenshot', async (event) => {
+
+  console.log("ipc");
+
+  /*const screenShotInfo = await captureScreen();
+  const dataURL = screenShotInfo.toDataURL();
+  event.sender.send('screenshot-captured', dataURL);*/
 });

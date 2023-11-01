@@ -39,7 +39,7 @@ export default defineConfig({
     electron([
       {
         // Main-Process entry file of the Electron App.
-        entry: 'electron/main/index.ts',
+        entry: 'electron/main/index.js',
         onstart(options) {
           if (process.env.VSCODE_DEBUG) {
             console.log(
@@ -63,7 +63,7 @@ export default defineConfig({
         },
       },
       {
-        entry: 'electron/preload/index.ts',
+        entry: 'electron/preload/index.js',
         onstart(options) {
           // Notify the Renderer-Process to reload the page when the Preload-Scripts build is complete,
           // instead of restarting the entire Electron App.

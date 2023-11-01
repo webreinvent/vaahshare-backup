@@ -13,9 +13,8 @@ const root = useRootStore();
     <h1>Home Page</h1>
 
 
-    {{root.count}}
+    <button @click="root.screenshot()">Screenshot</button>
 
-    <button @click="root.test()">Increase Count</button>
 
 
 

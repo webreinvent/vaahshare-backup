@@ -80,4 +80,7 @@ electron.ipcMain.handle("open-win", (_, arg) => {
     childWindow.loadFile(indexHtml, { hash: arg });
   }
 });
+electron.ipcMain.on("vaah-capture-screenshot", async (event) => {
+  console.log("ipc");
+});
 //# sourceMappingURL=index.js.map

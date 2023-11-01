@@ -1,4 +1,5 @@
 "use strict";
+const electron = require("electron");
 function domReady(condition = ["complete", "interactive"]) {
   return new Promise((resolve) => {
     if (condition.includes(document.readyState)) {
@@ -75,5 +76,14 @@ domReady().then(appendLoading);
 window.onmessage = (ev) => {
   ev.data.payload === "removeLoading" && removeLoading();
 };
+electron.contextBridge.exposeInMainWorld("vaahScreenshot", {
+  takeSrc() {
+    console.log("captureScreenShot");
+    electron.ipcRenderer.send("capture-screenshot");
+  },
+  screenShotCaptured: (callback) => {
+    electron.ipcRenderer.on("screenshot-captured", (event, screenshotURL) => callback(event, screenshotURL));
+  }
+});
 setTimeout(removeLoading, 4999);
 //# sourceMappingURL=index.js.map

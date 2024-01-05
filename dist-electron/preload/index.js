@@ -85,5 +85,4 @@ electron.contextBridge.exposeInMainWorld("vaahScreenshot", {
     electron.ipcRenderer.on("screenshot-captured", (event, screenshotURL) => callback(event, screenshotURL));
   }
 });
-setTimeout(removeLoading, 4999);
 //# sourceMappingURL=index.js.map

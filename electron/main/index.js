@@ -131,9 +131,7 @@ ipcMain.handle('open-win', (_, arg) => {
   }
 });
 
-ipcMain.handle('getSources', async (event) => {
-  return await getVideoSources();
-});
+
 
 ipcMain.handle('startStreaming', async (event, screenId) => {
   return await startStreaming(screenId);
@@ -144,9 +142,29 @@ ipcMain.on('stopStreaming', (event) => {
 });
 
 
+ipcMain.handle('getSources', async () => {
+  const inputSources = await getVideoSources();
+  mainWindow.webContents.send('video-sources', inputSources);
+  return inputSources;
+})
 
- async function getVideoSources() {
-  return await ipcRenderer.invoke('getSources');
+
+async function getVideoSources() {
+  try {
+    // Use desktopCapturer to get the available screens
+    const sources = await desktopCapturer.getSources({ types: ['screen'] });
+
+    // Map the sources to an array of objects with id and name properties
+    const screens = sources.map((source, index) => ({
+      id: index + 1, // You can customize the ID as needed
+      name: source.name,
+    }));
+
+    return screens;
+  } catch (error) {
+    console.error('Error getting video sources:', error);
+    return [];
+  }
 }
 
  async function startStreaming(screenId) {

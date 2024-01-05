@@ -73,6 +73,7 @@ async function createWindow() {
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', new Date().toLocaleString());
   });
+  win.webContents.send( 'video-sources')
 
   // Make all links open with the browser, not with the application
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -133,8 +134,10 @@ ipcMain.handle('open-win', (_, arg) => {
 
 
 
-ipcMain.handle('startStreaming', async (event, screenId) => {
-  return await startStreaming(screenId);
+ipcMain.handle('startStreaming',   (event, screenId) => {
+
+ return win.webContents.send('stream', startStreaming(screenId))
+
 });
 
 ipcMain.on('stopStreaming', (event) => {
@@ -144,7 +147,7 @@ ipcMain.on('stopStreaming', (event) => {
 
 ipcMain.handle('getSources', async () => {
   const inputSources = await getVideoSources();
-  mainWindow.webContents.send('video-sources', inputSources);
+  win.webContents.send('video-sources', inputSources);
   return inputSources;
 })
 
@@ -152,14 +155,14 @@ ipcMain.handle('getSources', async () => {
 async function getVideoSources() {
   try {
     // Use desktopCapturer to get the available screens
-    const sources = await desktopCapturer.getSources({ types: ['screen'] });
+    const sources = await desktopCapturer.getSources({types: ['screen']});
 
     // Map the sources to an array of objects with id and name properties
     const screens = sources.map((source, index) => ({
       id: index + 1, // You can customize the ID as needed
       name: source.name,
     }));
-
+  console.log(screens);
     return screens;
   } catch (error) {
     console.error('Error getting video sources:', error);
@@ -167,8 +170,9 @@ async function getVideoSources() {
   }
 }
 
- async function startStreaming(screenId) {
+async function startStreaming(screenId) {
   const IS_MACOS = await ipcRenderer.invoke('getOperatingSystem') === 'darwin';
+  console.log('till now');
   const audio = !IS_MACOS
     ? {
       mandatory: {
@@ -186,12 +190,13 @@ async function getVideoSources() {
       },
     },
   };
-
+console.log("till now")
   const stream = await navigator.mediaDevices.getUserMedia(constraints);
+console.log(stream)
 
   return stream;
 }
-
+//
  function stopStreaming(stream) {
   const tracks = stream.getTracks();
   tracks.forEach(track => track.stop());

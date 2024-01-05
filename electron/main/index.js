@@ -1,7 +1,10 @@
-import {app, BrowserWindow, ContextBridge, shell,
-  ipcMain, screen, desktopCapturer, ipcRenderer} from 'electron';
+import {
+  app, BrowserWindow, ContextBridge, shell,
+  ipcMain, screen, desktopCapturer, ipcRenderer, dialog
+} from 'electron';
 import { release } from 'node:os';
 import { join } from 'node:path';
+
 
 // The built directory structure
 //
@@ -77,8 +80,6 @@ async function createWindow() {
     return { action: 'deny' };
   });
 
-
-
 }
 
 
@@ -110,6 +111,7 @@ app.on('activate', () => {
   }
 });
 
+
 // New window example arg: new windows url
 ipcMain.handle('open-win', (_, arg) => {
   const childWindow = new BrowserWindow({
@@ -120,12 +122,62 @@ ipcMain.handle('open-win', (_, arg) => {
     },
   });
 
+
+
   if (process.env.VITE_DEV_SERVER_URL) {
     childWindow.loadURL(`${url}#${arg}`);
   } else {
     childWindow.loadFile(indexHtml, { hash: arg });
   }
 });
+
+ipcMain.handle('getSources', async (event) => {
+  return await getVideoSources();
+});
+
+ipcMain.handle('startStreaming', async (event, screenId) => {
+  return await startStreaming(screenId);
+});
+
+ipcMain.on('stopStreaming', (event) => {
+  return stopStreaming(stream)
+});
+
+
+
+ async function getVideoSources() {
+  return await ipcRenderer.invoke('getSources');
+}
+
+ async function startStreaming(screenId) {
+  const IS_MACOS = await ipcRenderer.invoke('getOperatingSystem') === 'darwin';
+  const audio = !IS_MACOS
+    ? {
+      mandatory: {
+        chromeMediaSource: 'desktop',
+      },
+    }
+    : false;
+
+  const constraints = {
+    audio,
+    video: {
+      mandatory: {
+        chromeMediaSource: 'desktop',
+        chromeMediaSourceId: screenId,
+      },
+    },
+  };
+
+  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+  return stream;
+}
+
+ function stopStreaming(stream) {
+  const tracks = stream.getTracks();
+  tracks.forEach(track => track.stop());
+}
 
 
 ipcMain.on('vaah-capture-screenshot', async (event) => {
@@ -136,3 +188,5 @@ ipcMain.on('vaah-capture-screenshot', async (event) => {
   const dataURL = screenShotInfo.toDataURL();
   event.sender.send('screenshot-captured', dataURL);*/
 });
+
+

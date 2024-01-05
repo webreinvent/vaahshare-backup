@@ -82,6 +82,18 @@ export default defineConfig({
           },
         },
       },
+      // {
+      //   // Renderer-Process entry file
+      //   entry: 'electron/renderer/index.js',
+      //   vite: {
+      //     build: {
+      //       sourcemap: isDevelopment,
+      //       minify: isProduction,
+      //       outDir: 'dist-electron/renderer',
+      //       // Additional renderer-specific configurations can be added here
+      //     },
+      //   },
+      // },
     ]),
 
     // Use Node.js API in the Renderer-process

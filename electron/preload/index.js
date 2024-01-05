@@ -112,4 +112,4 @@ contextBridge.exposeInMainWorld('vaahScreenshot', {
 })
 
 
-setTimeout(removeLoading, 4999);
+

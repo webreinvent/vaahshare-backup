@@ -7,18 +7,16 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+release
 node_modules
 dist
 dist-ssr
-dist-electron
-
 *.local
-
-mac-arm64
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/launch.json 
 .idea
 .DS_Store
 *.suo

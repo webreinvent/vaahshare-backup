@@ -1,6 +1,4 @@
 # VaahShare
-> Cross Platform Screen capture, file sharing and productivity tool
 
-
-## References
-- https://electron-vite.github.io/
+Reference:
+- https://github.com/shamscorner/electron-vite-ts-stackter

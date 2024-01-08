@@ -13,64 +13,62 @@ const screens = ref([]);
 
 
 
-//
-//
-// const startStreaming = async () => {
+
+
+const startStreaming = async () => {
+  try {
+    if (selectedScreen.value) {
+      console.log(selectedScreen.value);
+
+      const result = window.startStreaming('startStreaming', selectedScreen.value);
+      console.log(result);
+
+      videoElement.value.srcObject = result;
+      streaming.value = true; // Update streaming state
+    } else {
+      // Handle the case where no screen is selected
+      console.error('No screen selected');
+    }
+  } catch (error) {
+    // Handle errors appropriately
+    console.error('Error during streaming:', error);
+  }
+};
+
+
+// const startStreamingFunction = async () => {
 //   try {
-//     if (selectedScreen.value) {
-//       console.log(selectedScreen.value);
+//     // Start streaming and get the stream ID
+//     const selectedScreen = '1'; // Replace with the selected screen ID
+//     const stream = await ipcRenderer.invoke('startStreaming', selectedScreen);
 //
-//       const result = window.startStreaming('startStreaming', selectedScreen.value);
-//       console.log(result);
+//     // Do something with the stream, e.g., assign it to a video element
+//     videoElement.srcObject = stream;
 //
-//       videoElement.value.srcObject = result;
-//       streaming.value = true; // Update streaming state
-//     } else {
-//       // Handle the case where no screen is selected
-//       console.error('No screen selected');
-//     }
+//     console.log('Stream started:', stream);
 //   } catch (error) {
-//     // Handle errors appropriately
-//     console.error('Error during streaming:', error);
+//     console.error('Error starting streaming:', error);
 //   }
 // };
 
 
 
-const startStreamingFunction = async () => {
-  try {
-    // Import the exposed function from the preload script
-    const startStreaming = window.startStreaming?.start;
-
-    if (startStreaming) {
-      // Call the exposed function with the selected screen value
-      const stream = await startStreaming(selectedScreen.value);
-
-      // Do something with the stream, e.g., assign it to a video element
-      videoElement.value.srcObject = stream;
-
-      console.log('Stream started:', stream);
-    } else {
-      console.error('startStreaming function is not available.');
-    }
-  } catch (error) {
-    console.error('Error starting streaming:', error);
-  }
-};
 onMounted(
   async () => {
     console.log("ll");
     screens.value = await ipcRenderer.invoke('getSources');
-
-    await startStreamingFunction();
+    //
+    // await startStreamingFunction();
+    videoElement.value = await ipcRenderer.invoke('startStreaming', 1)
   });
+
 </script>
 
 <template>
   <div class="text-center">
     <div>
             <video ref="videoElement"></video>
-            <button @click="startStreamingFunction" :disabled="streaming">Start Streaming</button>
+            <button @click="startStreaming" :disabled="streaming">Start Streaming</button>
             <button @click="stopStreaming" :disabled="!streaming">Stop Streaming</button>
 
 

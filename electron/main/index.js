@@ -57,9 +57,15 @@ ipcMain.handle('getSources', async () => {
   return inputSources;
 })
 
-ipcMain.handle('startStreaming', async  (id) => {
+ipcMain.handle('startStreaming', async  (event, id) => {
+  console.log("-->", id);
   const stream = await startStreaming(id);
-  win.webContents.send('stream', stream);
+console.log('--> 2')
+  const serializedStream = serializeStream(stream);
+
+  // Sending the serialized stream to the renderer process
+  event.sender.send('stream', serializedStream);
+  // win.webContents.send('stream', stream);
   return stream;
 })
 
@@ -74,7 +80,9 @@ async function createWindow() {
       // Consider using contextBridge.exposeInMainWorld
       // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
       nodeIntegration: true,
+      // sandbox: false,
       contextIsolation: false,
+      enableRemoteModule: true,
     },
   });
 
@@ -156,7 +164,7 @@ ipcMain.handle('open-win', (_, arg) => {
 async function getVideoSources() {
   try {
     // Use desktopCapturer to get the available screens
-    const sources = await desktopCapturer.getSources({types: ['screen']});
+    const sources = await desktopCapturer.getSources({types: ['screen', 'window']});
 
     // Map the sources to an array of objects with id and name properties
     const screens = sources.map((source, index) => ({
@@ -214,4 +222,6 @@ ipcMain.on('vaah-capture-screenshot', async (event) => {
   event.sender.send('screenshot-captured', dataURL);*/
 });
 
-
+ipcMain.on('greet', (event, args) =>{
+  console.log(args)
+})

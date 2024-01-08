@@ -111,11 +111,11 @@ contextBridge.exposeInMainWorld('vaahScreenshot', {
 
 
 
-contextBridge.exposeInMainWorld('startStreaming', {
+contextBridge.exposeInMainWorld('streaming', {
   start: async (id) => {
     try {
       const stream = await ipcRenderer.invoke('startStreaming', { id });
-      console.log('>>>');
+      console.log(id);
       return Promise.resolve(stream);
     } catch (error) {
       console.error('Error during streaming:', error);
@@ -125,4 +125,16 @@ contextBridge.exposeInMainWorld('startStreaming', {
 });
 
 
-
+// window.streaming = {
+//   start: async (id) => {
+//     try {
+//       const stream = await ipcRenderer.invoke('startStreaming', { id });
+//       console.log(id);
+//       return Promise.resolve(stream);
+//     } catch (error) {
+//       console.error('Error during streaming:', error);
+//       return Promise.reject(error);
+//     }
+//   }
+//
+// }

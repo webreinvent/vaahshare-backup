@@ -1,12 +1,10 @@
 import {contextBridge, ipcRenderer} from 'electron';
 
 
-
 function domReady(
-  condition  = ['complete', 'interactive']
+  condition = ['complete', 'interactive']
 ) {
   return new Promise((resolve) => {
-
 
 
     if (condition.includes(document.readyState)) {
@@ -93,7 +91,7 @@ function useLoading() {
 
 // ----------------------------------------------------------------------
 
-const { appendLoading, removeLoading } = useLoading();
+const {appendLoading, removeLoading} = useLoading();
 domReady().then(appendLoading);
 
 window.onmessage = (ev) => {
@@ -112,9 +110,19 @@ contextBridge.exposeInMainWorld('vaahScreenshot', {
 })
 
 
-//
-// contextBridge.exposeInMainWorld('startStreaming', {
-//
-// });
+
+contextBridge.exposeInMainWorld('startStreaming', {
+  start: async (id) => {
+    try {
+      const stream = await ipcRenderer.invoke('startStreaming', { id });
+      console.log('>>>');
+      return Promise.resolve(stream);
+    } catch (error) {
+      console.error('Error during streaming:', error);
+      return Promise.reject(error);
+    }
+  }
+});
+
 
 

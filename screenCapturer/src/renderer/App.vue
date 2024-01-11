@@ -1,5 +1,16 @@
 <script setup lang="ts">
 import {onMounted, ref} from 'vue';
+import io from 'socket.io-client';
+import ss from 'socket.io-stream';
+
+
+const socket = io('ws://localhost:3001')
+
+
+socket.on("connect", () => {
+  console.log(socket.id);
+});
+
 
 const selectedSource = ref('');
 const video = ref<HTMLVideoElement | null>(null);
@@ -28,9 +39,13 @@ const startStream = async () => {
       }
     };
 
-    const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+    const streams = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+
+    socket.on('stream',function(streams){
+      socket.broadcast.emit('stream',streams);
+    });
     if (video.value) {
-      video.value.srcObject = stream;
+      video.value.srcObject = streams;
       video.value.play();
     } else {
       console.error('Video element is not available yet.');

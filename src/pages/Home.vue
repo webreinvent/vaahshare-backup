@@ -13,12 +13,18 @@ onMounted(() => {
     console.log('connected')
   });
 
-  socket.on("message", (data) => {
+  socket.on("new-client-connected", (data) => {
     console.log(data)
   });
 
+
+  socket.on("client-disconnected", (data) => {
+    console.log(data)
+  });
+
+
   setTimeout(() => {
-    socket.emit("message", "Hello World");
+    socket.emit("message", "Hello From the Client");
   }, 3000);
 
 })

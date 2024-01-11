@@ -1,11 +1,18 @@
-<script>
+<script setup>
+import {ref} from "vue";
+
+const items = ref([
+  {
+    label: 'Streaming App',
+    icon: 'pi pi-user'
+  },
+]);
 </script>
 
 <template>
   <div id="main-content">
     <div>
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
+      <Menubar :model="items" />
     </div>
       <router-view />
   </div>

@@ -45,10 +45,10 @@ const url = process.env.VITE_DEV_SERVER_URL;
 const indexHtml = join(process.env.DIST, 'index.html');
 
 
-
-ipcMain.on('stopStreaming', (event) => {
-  return stopStreaming(stream)
-});
+//
+// ipcMain.on('stopStreaming', (event) => {
+//   return stopStreaming(stream)
+// });
 
 
 ipcMain.handle('getSources', async () => {
@@ -57,17 +57,17 @@ ipcMain.handle('getSources', async () => {
   return inputSources;
 })
 
-ipcMain.handle('startStreaming', async  (event, id) => {
-  console.log("-->", id);
-  const stream = await startStreaming(id);
-console.log('--> 2')
-  const serializedStream = serializeStream(stream);
-
-  // Sending the serialized stream to the renderer process
-  event.sender.send('stream', serializedStream);
-  // win.webContents.send('stream', stream);
-  return stream;
-})
+// ipcMain.handle('startStreaming', async  (event, id) => {
+//   console.log("-->", id);
+//   const stream = await startStreaming(id);
+// console.log('--> 2')
+//   const serializedStream = serializeStream(stream);
+//
+//   // Sending the serialized stream to the renderer process
+//   event.sender.send('stream', serializedStream);
+//   // win.webContents.send('stream', stream);
+//   return stream;
+// })
 
 
 async function createWindow() {
@@ -80,11 +80,23 @@ async function createWindow() {
       // Consider using contextBridge.exposeInMainWorld
       // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
       nodeIntegration: true,
-      // sandbox: false,
       contextIsolation: false,
-      enableRemoteModule: true,
+
+
     },
   });
+  ipcMain.handle('startStreaming', async  (event, id) => {
+    console.log("-->", id);
+    const stream = await startStreaming(id);
+    console.log('--> 2')
+    const serializedStream = serializeStream(stream);
+
+    // Sending the serialized stream to the renderer process
+    event.sender.send('stream', serializedStream);
+    // win.webContents.send('stream', stream);
+    return stream;
+  })
+
 
   if (process.env.VITE_DEV_SERVER_URL) {
     // electron-vite-vue#298
@@ -106,7 +118,7 @@ async function createWindow() {
     if (url.startsWith('https:')) shell.openExternal(url);
     return {action: 'deny'};
   });
- win.webContents.send('stream')
+
 }
 
 
@@ -222,6 +234,3 @@ ipcMain.on('vaah-capture-screenshot', async (event) => {
   event.sender.send('screenshot-captured', dataURL);*/
 });
 
-ipcMain.on('greet', (event, args) =>{
-  console.log(args)
-})

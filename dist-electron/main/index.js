@@ -17,6 +17,11 @@ let win = null;
 const preload = node_path.join(__dirname, "../preload/index.js");
 const url = process.env.VITE_DEV_SERVER_URL;
 const indexHtml = node_path.join(process.env.DIST, "index.html");
+electron.ipcMain.handle("getSources", async () => {
+  const inputSources = await getVideoSources();
+  win.webContents.send("video-sources", inputSources);
+  return inputSources;
+});
 async function createWindow() {
   win = new electron.BrowserWindow({
     title: "Main window",
@@ -30,6 +35,14 @@ async function createWindow() {
       contextIsolation: false
     }
   });
+  electron.ipcMain.handle("startStreaming", async (event, id) => {
+    console.log("-->", id);
+    const stream = await startStreaming(id);
+    console.log("--> 2");
+    const serializedStream = serializeStream(stream);
+    event.sender.send("stream", serializedStream);
+    return stream;
+  });
   if (process.env.VITE_DEV_SERVER_URL) {
     win.loadURL(url);
     win.webContents.openDevTools();
@@ -39,6 +52,7 @@ async function createWindow() {
   win.webContents.on("did-finish-load", () => {
     win == null ? void 0 : win.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
   });
+  win.webContents.send("video-sources");
   win.webContents.setWindowOpenHandler(({ url: url2 }) => {
     if (url2.startsWith("https:"))
       electron.shell.openExternal(url2);
@@ -80,25 +94,15 @@ electron.ipcMain.handle("open-win", (_, arg) => {
     childWindow.loadFile(indexHtml, { hash: arg });
   }
 });
-electron.ipcMain.handle("startStreaming", async (event, screenId) => {
-  return await startStreaming(screenId);
-});
-electron.ipcMain.on("stopStreaming", (event) => {
-  return stopStreaming(stream);
-});
-electron.ipcMain.handle("getSources", async () => {
-  const inputSources = await getVideoSources();
-  mainWindow.webContents.send("video-sources", inputSources);
-  return inputSources;
-});
 async function getVideoSources() {
   try {
-    const sources = await electron.desktopCapturer.getSources({ types: ["screen"] });
+    const sources = await electron.desktopCapturer.getSources({ types: ["screen", "window"] });
     const screens = sources.map((source, index) => ({
       id: index + 1,
       // You can customize the ID as needed
       name: source.name
     }));
+    console.log(screens);
     return screens;
   } catch (error) {
     console.error("Error getting video sources:", error);
@@ -107,6 +111,7 @@ async function getVideoSources() {
 }
 async function startStreaming(screenId) {
   const IS_MACOS = await electron.ipcRenderer.invoke("getOperatingSystem") === "darwin";
+  console.log("till now");
   const audio = !IS_MACOS ? {
     mandatory: {
       chromeMediaSource: "desktop"
@@ -121,12 +126,10 @@ async function startStreaming(screenId) {
       }
     }
   };
-  const stream2 = await navigator.mediaDevices.getUserMedia(constraints);
-  return stream2;
-}
-function stopStreaming(stream2) {
-  const tracks = stream2.getTracks();
-  tracks.forEach((track) => track.stop());
+  console.log("till now");
+  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  console.log(stream);
+  return stream;
 }
 electron.ipcMain.on("vaah-capture-screenshot", async (event) => {
   console.log("ipc");

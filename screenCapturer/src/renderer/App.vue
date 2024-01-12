@@ -2,6 +2,8 @@
 import {onMounted, ref} from 'vue';
 import io from 'socket.io-client';
 import ss from 'socket.io-stream';
+import SimplePeer from 'simple-peer';
+import * as console from "console";
 
 
 const socket = io('ws://localhost:3001')
@@ -11,11 +13,19 @@ socket.on("connect", () => {
   console.log(socket.id);
 });
 
-
 const selectedSource = ref('');
 const video = ref<HTMLVideoElement | null>(null);
 const videoSources = ref<any[]>([]);
 const isStreaming = ref(false);
+
+const peer = new SimplePeer({initiator: location.hash === '#init'});
+
+
+peer.on('signal', (data) => {
+  socket.emit('signal', data);
+});
+
+
 const getVideoSources = async () => {
   try {
     const inputSources = await window.myAPIs.getVideoSources();
@@ -41,9 +51,20 @@ const startStream = async () => {
 
     const streams = await navigator.mediaDevices.getUserMedia(mediaConstraints);
 
-    socket.on('stream',function(streams){
-      socket.broadcast.emit('stream',streams);
+    socket.on('signal', (data) => {
+      // Receive signaling data from the other peer
+
+      peer.signal(data);
     });
+
+    peer.on('signal', (streams) => {
+      // Send signaling data to the server
+
+      socket.emit('signal', streams);
+
+    });
+
+    socket.emit('stream', streams);
     if (video.value) {
       video.value.srcObject = streams;
       video.value.play();

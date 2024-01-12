@@ -1,57 +1,42 @@
-// const {Server} = require("socket.io");
-//
-// const socketStream = require('socket.io-stream')
-// const io = new Server({ /* options */});
-//
-//
-// io.on("connection", (socket) => {
-//     console.log(socket.id); // ojIckSD2jqNzOqIrAGzL
-// });
-//
-// io.listen(3001, {});
-//
-//
-//
-
-
 const fastify = require("fastify");
-
-const fastifyIO = require("fastify-socket.io");
+const socketio = require('fastify-socket.io');
 const cors = require('@fastify/cors')
+const app = fastify({logger: true})
+const peer = require('simple-peer');
 
+app.register(cors, {
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+});
 
-const server = fastify();
-
-server.register(cors, {
-
+app.register(socketio, {
+  cors: {
     origin: "*",
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-
-})
-server.register(fastifyIO, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    }
+    methods: ["GET", "POST"]
+  }
 });
 
-
-server.get("/", (req, reply) => {
-    server.io.emit("hello");
+app.get("/", (req, reply) => {
+  fastify.io.emit("hello");
 });
 
-server.ready().then(() => {
+app.ready((err) => {
+  if (err) throw err;
 
+  app.io.on("connect", (socket) => {
+    console.info("Socket connected!", socket.id);
 
-    server.io.on('connect', (socket) => {
-        console.log('connected', socket.id)
-    })
+    socket.on('stream', (stream) => {
+      console.log("started");
+      // Broadcast the stream to all other clients
+      socket.broadcast.emit('stream', stream);
+    });
+    socket.on('signal', (data) => {
+      console.log('signalling')
+      // Broadcast the signaling data to the other peer
+      socket.broadcast.emit('signal', data);
+    });
+  });
 });
 
-server.listen({port: 3001});
-
-
-
-
-
-
+app.listen({port: 3001});

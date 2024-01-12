@@ -1,13 +1,13 @@
 import path from 'path';
-import { rmSync } from 'node:fs';
-import { defineConfig } from 'vite';
+import {rmSync} from 'node:fs';
+import {defineConfig} from 'vite';
 import vue from '@vitejs/plugin-vue';
 import AutoImport from 'unplugin-auto-import/vite';
 import electron from 'vite-plugin-electron';
 import renderer from 'vite-plugin-electron-renderer';
 import pkg from './package.json';
 
-rmSync('dist-electron', { recursive: true, force: true });
+rmSync('dist-electron', {recursive: true, force: true});
 
 const isDevelopment =
   process.env.NODE_ENV === 'development' || !!process.env.VSCODE_DEBUG;
@@ -19,6 +19,7 @@ export default defineConfig({
     __VUE_I18N_FULL_INSTALL__: true,
     __VUE_I18N_LEGACY_API__: false,
     __INTLIFY_PROD_DEVTOOLS__: false,
+    global: {}
   },
 
   resolve: {
@@ -105,12 +106,12 @@ export default defineConfig({
 
   server: process.env.VSCODE_DEBUG
     ? (() => {
-        const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL);
-        return {
-          host: url.hostname,
-          port: +url.port,
-        };
-      })()
+      const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL);
+      return {
+        host: url.hostname,
+        port: +url.port,
+      };
+    })()
     : undefined,
   clearScreen: false,
 });

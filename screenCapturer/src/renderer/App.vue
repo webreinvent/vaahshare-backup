@@ -35,7 +35,6 @@ const getVideoSources = async () => {
   }
 };
 
-
 const startStream = async () => {
   try {
     const mediaConstraints = {
@@ -44,38 +43,37 @@ const startStream = async () => {
         mandatory: {
           chromeMediaSource: 'desktop',
           chromeMediaSourceId: selectedSource.value,
-
         }
       }
     };
 
     const streams = await navigator.mediaDevices.getUserMedia(mediaConstraints);
 
-    socket.on('signal', (data) => {
-      // Receive signaling data from the other peer
-
-      peer.signal(data);
-    });
-
-    peer.on('signal', (streams) => {
-      // Send signaling data to the server
-
-      socket.emit('signal', streams);
-
-    });
-
-    socket.emit('stream', streams);
+    // Display the stream on the video element
     if (video.value) {
       video.value.srcObject = streams;
       video.value.play();
     } else {
       console.error('Video element is not available yet.');
+      return;
     }
+
+    const mediaRecorder = new MediaRecorder(streams);
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        // Emit the recorded data (Blob or ArrayBuffer) via Socket.IO
+
+        socket.emit('stream', event.data);
+      }
+    };
+
+    // Start recording after the stream is ready
+    mediaRecorder.start(100);
+
     isStreaming.value = true; // Update stream state
   } catch (error) {
     console.error('Error starting stream:', error);
-
-
   }
 };
 

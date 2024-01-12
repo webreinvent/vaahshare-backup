@@ -7,8 +7,6 @@ import 'primevue/resources/themes/lara-dark-green/theme.css'
 import 'primeflex/primeflex.css'
 
 
-
-
 //-------------PrimeVue Imports
 import PrimeVue from "primevue/config";
 import AutoComplete from 'primevue/autocomplete';
@@ -24,14 +22,14 @@ import Checkbox from 'primevue/checkbox';
 import Column from 'primevue/column';
 import ConfirmDialog from 'primevue/confirmdialog';
 import ConfirmPopup from 'primevue/confirmpopup';
-import ConfirmationService from 'primevue/confirmationservice';
+// import ConfirmationService from 'primevue/confirmationservice';
 import DataTable from 'primevue/datatable';
 import Dialog from 'primevue/dialog';
-import DialogService from 'primevue/dialogservice'
+// import DialogService from 'primevue/dialogservice'
 import Divider from 'primevue/divider';
 import Dropdown from 'primevue/dropdown';
 import DynamicDialog from 'primevue/dynamicdialog';
-import Editor from 'primevue/editor';
+// import Editor from 'primevue/editor';
 import FileUpload from 'primevue/fileupload';
 import Image from 'primevue/image';
 import InputSwitch from 'primevue/inputswitch';
@@ -59,7 +57,7 @@ import TabView from 'primevue/tabview';
 import TieredMenu from 'primevue/tieredmenu';
 import Textarea from 'primevue/textarea';
 import Toast from 'primevue/toast';
-import ToastService from 'primevue/toastservice';
+// import ToastService from 'primevue/toastservice';
 import Tag from 'primevue/tag';
 import Tooltip from 'primevue/tooltip';
 import TreeSelect from 'primevue/treeselect';

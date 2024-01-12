@@ -1,4 +1,4 @@
-const { app, BrowserWindow, desktopCapturer, ipcMain, ipcRenderer }  = require('electron');
+const { app, BrowserWindow, desktopCapturer, ipcMain }  = require('electron');
 import path from 'node:path'
 
 // The built directory structure
@@ -14,6 +14,7 @@ process.env.DIST = path.join(__dirname, '../dist')
 process.env.VITE_PUBLIC = app.isPackaged ? process.env.DIST : path.join(process.env.DIST, '../public')
 
 
+// @ts-ignore
 let win: BrowserWindow | null
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
@@ -23,7 +24,6 @@ function createWindow() {
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      enableRemoteModule: true,
       nodeIntegration: true,
     },
   })
@@ -77,11 +77,12 @@ app.on('ready', async () => {
   });
 });
 
-
+// @ts-ignore
 ipcMain.on('take-screenshot', async (event, sourceId) => {
     const screenshotPath = path.join(app.getPath('desktop'), 'screenshot.png');
     const source = (await desktopCapturer.getSources({ types: ['window', 'screen'],
     thumbnailSize: { width: 1920, height: 1080}
+      // @ts-ignore
     })).find(source => source.id === sourceId);
     if (source) {
       const image = source.thumbnail.toPNG();

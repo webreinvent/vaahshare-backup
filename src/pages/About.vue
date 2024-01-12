@@ -1,9 +1,4 @@
-<script setup lang="ts">
-import {onMounted} from "vue";
-import {useRootStore} from "../stores/root";
-
-const store = useRootStore();
-
+<script setup>
 </script>
 
 <template>

@@ -1,4 +1,6 @@
 import {defineStore, acceptHMRUpdate} from 'pinia';
+import {io} from "socket.io-client";
+
 export const useRootStore = defineStore({
     id: 'root',
     state: () => ({
@@ -11,11 +13,25 @@ export const useRootStore = defineStore({
         screenshot_path: null,
         selected_source_id: null,
         saving_screenshot: false,
+        is_streaming: false,
+        stream: null,
+        socket: null,
+        peerConnection: null,
     }),
     getters: {},
     actions: {
         onLoad()
         {
+            this.socket = io('http://localhost:3000');
+            this.handleSocketEvents();
+
+
+
+
+
+
+
+
             // Get the available video sources
             window.ipcRenderer.on('sources', (_event, sources) => {
                 this.sources = sources;
@@ -33,6 +49,29 @@ export const useRootStore = defineStore({
             });
         },
         //---------------------------------------------------------------------
+        handleSocketEvents()
+        {
+            this.socket.on("connect", () => {
+                console.log('connected')
+            });
+
+            this.socket.on("new-client-connected", (data) => {
+                console.log(data)
+            });
+
+
+            this.socket.on("client-disconnected", (data) => {
+                console.log(data)
+            });
+
+
+
+
+            setTimeout(() => {
+                this.socket.emit("message", "Hello From the Client");
+            }, 3000);
+        },
+        //---------------------------------------------------------------------
         takeScreenshot()
         {
             window.ipcRenderer.send('take-screenshot', this.selected_source_id);
@@ -41,7 +80,7 @@ export const useRootStore = defineStore({
         async onSourceChanged()
         {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
+                this.stream = await navigator.mediaDevices.getUserMedia({
                     audio: false,
                     video: {
                         mandatory: {
@@ -54,7 +93,7 @@ export const useRootStore = defineStore({
                         }
                     }
                 })
-                this.handleStream(stream)
+                this.handleStream(this.stream)
             } catch (e) {
                 // Currently not able to handle when a new source is added or not so we just remove it from the list
                 this.sources = this.sources.filter(source => source.id !== this.selected_source_id)
@@ -72,7 +111,55 @@ export const useRootStore = defineStore({
         handleError(e)
         {
             console.log(e)
-        }
+        },
+        //---------------------------------------------------------------------
+        toggleStream()
+        {
+            if (this.is_streaming) {
+                this.stopStream()
+            } else {
+                this.startStream()
+            }
+        },
+        //---------------------------------------------------------------------
+        async startStream()
+        {
+            this.is_streaming = true
+
+            try {
+
+                const peerConnection = new RTCPeerConnection();
+                this.stream.getTracks().forEach(track => peerConnection.addTrack(track, this.stream));
+
+                peerConnection.onicecandidate = event => {
+                    if (event.candidate) {
+                        this.socket.emit('candidate', event.candidate);
+                    }
+                }
+
+                peerConnection.onnegotiationneeded = async () => {
+                    const offer = await peerConnection.createOffer();
+                    await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
+                    this.socket.emit('offer', offer);
+                }
+
+                this.socket.emit('start-streaming', {
+                    source_id: this.selected_source_id,
+                })
+            }
+
+            catch (e) {
+                    console.log(e)
+                }
+            // this.socket.emit('start-streaming', 'start-streaming')
+        },
+        //---------------------------------------------------------------------
+        stopStream()
+        {
+            this.is_streaming = false
+            this.socket.emit('stop-streaming', 'stop-streaming')
+        },
+
     }
 })
 

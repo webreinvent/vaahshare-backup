@@ -17,6 +17,9 @@ export const useRootStore = defineStore({
         stream: null,
         socket: null,
         peerConnection: null,
+        video: null,
+        frames: [],
+        media_recorder: null,
     }),
     getters: {},
     actions: {
@@ -24,13 +27,6 @@ export const useRootStore = defineStore({
         {
             this.socket = io('http://localhost:3000');
             this.handleSocketEvents();
-
-
-
-
-
-
-
 
             // Get the available video sources
             window.ipcRenderer.on('sources', (_event, sources) => {
@@ -106,6 +102,7 @@ export const useRootStore = defineStore({
             const video = document.querySelector('video')
             video.srcObject = stream
             video.onloadedmetadata = (e) => video.play()
+            this.video = video
         },
         //---------------------------------------------------------------------
         handleError(e)
@@ -126,37 +123,38 @@ export const useRootStore = defineStore({
         {
             this.is_streaming = true
 
-            try {
+            this.media_recorder = new MediaRecorder(this.stream, {
+                mimeType: 'video/webm; codecs=vp9'
+            })
 
-                const peerConnection = new RTCPeerConnection();
-                this.stream.getTracks().forEach(track => peerConnection.addTrack(track, this.stream));
+            this.media_recorder.start(1000)
 
-                peerConnection.onicecandidate = event => {
-                    if (event.candidate) {
-                        this.socket.emit('candidate', event.candidate);
-                    }
+            this.media_recorder.ondataavailable = async (e) => {
+                if (e.data.size > 0) {
+                    const buffer = await event.data.arrayBuffer();  // Convert Blob to ArrayBuffer
+                    this.socket.emit('video-frame',buffer)
+                    
                 }
-
-                peerConnection.onnegotiationneeded = async () => {
-                    const offer = await peerConnection.createOffer();
-                    await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
-                    this.socket.emit('offer', offer);
-                }
-
-                this.socket.emit('start-streaming', {
-                    source_id: this.selected_source_id,
-                })
             }
 
-            catch (e) {
-                    console.log(e)
-                }
-            // this.socket.emit('start-streaming', 'start-streaming')
+            // const canvas = document.createElement('canvas')
+            // canvas.width = this.video.videoWidth;
+            // canvas.height = this.video.videoHeight;
+            // const ctx = canvas.getContext('2d')
+            // this.frames = setInterval(() => {
+            //     ctx.drawImage(this.video, 0, 0, canvas.width, canvas.height)
+            //     const frame = canvas.toDataURL('image/jpeg', 1.0);
+            //     this.socket.emit('video-frame', frame)
+            // }, 100)
+
+            this.socket.emit('start-streaming', 'start-streaming')
         },
         //---------------------------------------------------------------------
         stopStream()
         {
             this.is_streaming = false
+            clearInterval(this.frames)
+            this.media_recorder.stop()
             this.socket.emit('stop-streaming', 'stop-streaming')
         },
 

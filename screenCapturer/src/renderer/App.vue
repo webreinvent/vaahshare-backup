@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {onMounted, ref} from 'vue';
 import io from 'socket.io-client';
-import ss from 'socket.io-stream';
 import SimplePeer from 'simple-peer';
 import * as console from "console";
 
@@ -17,7 +16,7 @@ const selectedSource = ref('');
 const video = ref<HTMLVideoElement | null>(null);
 const videoSources = ref<any[]>([]);
 const isStreaming = ref(false);
-
+const buffer = ref<any[]>([]);
 const peer = new SimplePeer({initiator: location.hash === '#init'});
 
 
@@ -60,16 +59,22 @@ const startStream = async () => {
 
     const mediaRecorder = new MediaRecorder(streams);
 
-    mediaRecorder.ondataavailable = (event) => {
+
+    // let bufertoDataUrl() =>{
+    //   let blob = new Blob(buffer, {
+    //     type: 'video/webm'
+    //   })
+    // }
+    mediaRecorder.ondataavailable = async (event) => {
       if (event.data.size > 0) {
         // Emit the recorded data (Blob or ArrayBuffer) via Socket.IO
-
-        socket.emit('stream', event.data);
+        const dataUrl = await blobToDataUrl(event.data);
+        socket.emit('stream', dataUrl)
       }
     };
 
     // Start recording after the stream is ready
-    mediaRecorder.start(100);
+    mediaRecorder.start(3000);
 
     isStreaming.value = true; // Update stream state
   } catch (error) {
@@ -77,7 +82,14 @@ const startStream = async () => {
   }
 };
 
-
+const blobToDataUrl = (blob) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
 const stopStream = () => {
   if (video.value && video.value.srcObject) {
     const tracks = (video.value.srcObject as MediaStream).getTracks();

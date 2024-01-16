@@ -5,9 +5,7 @@ export const useRootStore = defineStore({
     id: 'root',
     state: () => ({
         assets: null,
-        gutter: 20,
         assets_is_fetching: true,
-        count:0,
         sources: [],
         is_screenshot_saved: false,
         screenshot_path: null,
@@ -16,9 +14,7 @@ export const useRootStore = defineStore({
         is_streaming: false,
         stream: null,
         socket: null,
-        peerConnection: null,
         video: null,
-        frames: [],
         media_recorder: null,
     }),
     getters: {},
@@ -29,11 +25,21 @@ export const useRootStore = defineStore({
             this.handleSocketEvents();
 
             // Get the available video sources
+            this.getSources();
+
+            // Save the screenshot
+            this.saveScreenshot();
+        },
+        //---------------------------------------------------------------------
+        getSources()
+        {
             window.ipcRenderer.on('sources', (_event, sources) => {
                 this.sources = sources;
             });
-
-            // Save the screenshot
+        },
+        //---------------------------------------------------------------------
+        saveScreenshot()
+        {
             window.ipcRenderer.on('screenshot-saved', (_event, filePath) => {
                 this.is_screenshot_saved = true;
                 this.screenshot_path = filePath;
@@ -59,9 +65,6 @@ export const useRootStore = defineStore({
             this.socket.on("client-disconnected", (data) => {
                 console.log(data)
             });
-
-
-
 
             setTimeout(() => {
                 this.socket.emit("message", "Hello From the Client");
@@ -122,38 +125,24 @@ export const useRootStore = defineStore({
         async startStream()
         {
             this.is_streaming = true
-
             this.media_recorder = new MediaRecorder(this.stream, {
-                mimeType: 'video/webm; codecs=vp9'
+                mimeType: 'video/webm; codecs="vp8, opus"'
             })
-
-            this.media_recorder.start(1000)
-
-            this.media_recorder.ondataavailable = async (e) => {
-                if (e.data.size > 0) {
-                    const buffer = await event.data.arrayBuffer();  // Convert Blob to ArrayBuffer
-                    this.socket.emit('video-frame',buffer)
-                    
+            this.media_recorder.ondataavailable = async (event) => {
+                console.log('ondataavailable', event.data.size)
+                // Send the data chunk over the WebSocket connection
+                if (event.data && event.data.size > 0) {
+                    this.socket.emit('video-frame', event.data);
                 }
             }
 
-            // const canvas = document.createElement('canvas')
-            // canvas.width = this.video.videoWidth;
-            // canvas.height = this.video.videoHeight;
-            // const ctx = canvas.getContext('2d')
-            // this.frames = setInterval(() => {
-            //     ctx.drawImage(this.video, 0, 0, canvas.width, canvas.height)
-            //     const frame = canvas.toDataURL('image/jpeg', 1.0);
-            //     this.socket.emit('video-frame', frame)
-            // }, 100)
-
+            this.media_recorder.start(2000)
             this.socket.emit('start-streaming', 'start-streaming')
         },
         //---------------------------------------------------------------------
         stopStream()
         {
             this.is_streaming = false
-            clearInterval(this.frames)
             this.media_recorder.stop()
             this.socket.emit('stop-streaming', 'stop-streaming')
         },

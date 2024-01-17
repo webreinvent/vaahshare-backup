@@ -21,7 +21,11 @@ export const useRootStore = defineStore({
     actions: {
         onLoad()
         {
-            this.socket = io('http://localhost:3000');
+            this.socket = io('http://localhost:3000', {
+                query: {
+                    app: 'electron'
+                }
+            });
             this.handleSocketEvents();
 
             // Get the available video sources

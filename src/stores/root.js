@@ -70,6 +70,20 @@ export const useRootStore = defineStore({
                 console.log(data)
             });
 
+            this.socket.on("disconnect-stream", (data) => {
+                console.log("disconnect-stream")
+                if(this.media_recorder)
+                {
+                    this.media_recorder.stop();
+                }
+            });
+
+            // When user is connected to the stream, then we start to send the video frames
+            this.socket.on("connect-stream", (data) => {
+                console.log("connect-stream")
+                this.setupMediaRecorder();
+            });
+
             setTimeout(() => {
                 this.socket.emit("message", "Hello From the Client");
             }, 3000);
@@ -126,9 +140,17 @@ export const useRootStore = defineStore({
             }
         },
         //---------------------------------------------------------------------
-        async startStream()
+        startStream()
         {
-            this.is_streaming = true
+            /*
+             There is no need to send the video frame intially, we can send it after the modal is opened on the client side
+             */
+            this.is_streaming = true,
+            this.socket.emit('start-streaming', 'start-streaming')
+        },
+        //---------------------------------------------------------------------
+        async setupMediaRecorder()
+        {
             this.media_recorder = new MediaRecorder(this.stream, {
                 mimeType: 'video/webm; codecs="vp8, opus"'
             })
@@ -140,14 +162,17 @@ export const useRootStore = defineStore({
                 }
             }
 
+            // this will send the video frame every 2 seconds
             this.media_recorder.start(2000)
-            this.socket.emit('start-streaming', 'start-streaming')
         },
         //---------------------------------------------------------------------
         stopStream()
         {
             this.is_streaming = false
-            this.media_recorder.stop()
+            if(this.media_recorder)
+            {
+                this.media_recorder.stop();
+            }
             this.socket.emit('stop-streaming', 'stop-streaming')
         },
 

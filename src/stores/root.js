@@ -33,6 +33,16 @@ export const useRootStore = defineStore({
 
             // Save the screenshot
             this.saveScreenshot();
+
+            // Get the machine info
+            this.getMachineInfo();
+        },
+        //---------------------------------------------------------------------
+        getMachineInfo()
+        {
+            window.ipcRenderer.on('machine-info', (_event, data) => {
+                this.socket.emit('machine-info', data);
+            });
         },
         //---------------------------------------------------------------------
         getSources()
@@ -142,11 +152,12 @@ export const useRootStore = defineStore({
         //---------------------------------------------------------------------
         startStream()
         {
-            /*
-             There is no need to send the video frame intially, we can send it after the modal is opened on the client side
-             */
-            this.is_streaming = true,
-            this.socket.emit('start-streaming', 'start-streaming')
+            if (!this.selected_source_id) {
+                return alert('Please select a source')
+            }
+            this.is_streaming = true;
+            this.setupMediaRecorder();
+            this.socket.emit('start-streaming', this.socket.id);
         },
         //---------------------------------------------------------------------
         async setupMediaRecorder()
@@ -158,7 +169,10 @@ export const useRootStore = defineStore({
                 console.log('ondataavailable', event.data.size)
                 // Send the data chunk over the WebSocket connection
                 if (event.data && event.data.size > 0) {
-                    this.socket.emit('video-frame', event.data);
+                    this.socket.emit('video-frame', {
+                        buffer: event.data,
+                        socket_id: this.socket.id
+                    });
                 }
             }
 
@@ -173,7 +187,7 @@ export const useRootStore = defineStore({
             {
                 this.media_recorder.stop();
             }
-            this.socket.emit('stop-streaming', 'stop-streaming')
+            this.socket.emit('stop-streaming', this.socket.id);
         },
 
     }

@@ -1,5 +1,6 @@
 const { app, BrowserWindow, desktopCapturer, ipcMain }  = require('electron');
 import path from 'node:path'
+import os from 'os'
 
 // The built directory structure
 //
@@ -74,6 +75,17 @@ app.on('ready', async () => {
     } catch (error) {
       console.log('error getting sources', error);
     }
+
+    const operatingSystem = os.type();
+    const username = os.userInfo().username;
+    const hostname = os.hostname();
+
+    const machineInfo = {
+      operatingSystem,
+        username,
+        hostname
+    }
+    win?.webContents.send('machine-info', machineInfo);
   });
 });
 

@@ -1,32 +1,35 @@
-<script setup>
-import {useRootStore} from '../stores/root'
+<script setup lang="ts">
+import {onMounted} from "vue";
+import {useRootStore} from "../stores/root";
+const store = useRootStore();
 
-const { t } = useI18n();
+onMounted(() => {
+  store.onLoad();
 
-const root = useRootStore();
 
+
+})
 </script>
 
 <template>
-  <div class="text-center">
-
-    <h1>Home Page</h1>
-
-
-    <button @click="root.screenshot()">Screenshot</button>
-
-
-
-
-    <p class="text-center mt-6 flex items-center justify-center">
-
-      <router-link
-        to="/about"
-        class="block mx-4 px-2 py-1 border-b-2 border-green-300 hover:border-green-500 transition"
-      >
-        {{ t('aboutPage.goToAbout') }}
-      </router-link>
-    </p>
-
+  <div class="window">
+    <Card>
+      <template #content>
+            <div class="flex justify-content-center mb-3">
+              <video class="preview w-6 shadow-6"></video>
+            </div>
+             <div class="flex flex-column align-items-center">
+               <label for="screenDropdown">Select Screen:</label>
+               <Dropdown v-model="store.selected_source_id" :options="store.sources" optionLabel="name" placeholder="Select a Screen" class="w-full md:w-14rem" @change="store.onSourceChanged" option-value="id" />
+               <div class="button-container mt-3 flex gap-3">
+                 <Button class="button" @click="store.toggleStream" >
+                   {{ store.is_streaming ? 'Stop Streaming' : 'Start Streaming' }}
+                 </Button>
+                 <Button class="button" @click="store.takeScreenshot">Take Screenshot</Button>
+               </div>
+             </div>
+      </template>
+    </Card>
   </div>
 </template>
+

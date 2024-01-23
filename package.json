@@ -1,7 +1,7 @@
 {
-  "name": "my-electron-vite-project",
+  "name": "vaah-share",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build && electron-builder",

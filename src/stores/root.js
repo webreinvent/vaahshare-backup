@@ -21,7 +21,7 @@ export const useRootStore = defineStore({
     actions: {
         onLoad()
         {
-            this.socket = io('http://localhost:3000', {
+            this.socket = io(import.meta.env.VITE_SOCKET_URL, {
                 query: {
                     app: 'electron'
                 }
@@ -87,8 +87,7 @@ export const useRootStore = defineStore({
                     this.media_recorder.stop();
                 }
             });
-
-            // When user is connected to the stream, then we start to send the video frames
+                           // When user is connected to the stream, then we start to send the video frames
             this.socket.on("connect-stream", (data) => {
                 console.log("connect-stream")
                 this.setupMediaRecorder();

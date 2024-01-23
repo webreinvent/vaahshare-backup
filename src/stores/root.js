@@ -156,7 +156,10 @@ export const useRootStore = defineStore({
             }
             this.is_streaming = true;
             this.setupMediaRecorder();
-            this.socket.emit('start-streaming', this.socket.id);
+            this.socket.emit('start-streaming', {
+                socket_id: this.socket.id,
+                start_time: Date.now()
+            });
         },
         //---------------------------------------------------------------------
         async setupMediaRecorder()

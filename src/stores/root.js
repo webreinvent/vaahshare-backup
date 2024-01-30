@@ -33,16 +33,6 @@ export const useRootStore = defineStore({
 
             // Save the screenshot
             this.saveScreenshot();
-
-            // Get the machine info
-            this.getMachineInfo();
-        },
-        //---------------------------------------------------------------------
-        getMachineInfo()
-        {
-            window.ipcRenderer.on('machine-info', (_event, data) => {
-                this.socket.emit('machine-info', data);
-            });
         },
         //---------------------------------------------------------------------
         getSources()
@@ -68,13 +58,13 @@ export const useRootStore = defineStore({
         handleSocketEvents()
         {
             this.socket.on("connect", () => {
-                console.log('connected')
+                // Get the machine info on connect and then emit event to the server indicating that a new client has connected
+                window.ipcRenderer.on('machine-info', (_event, data) => {
+                    this.socket.emit('client-connected', {
+                        machine_info: data,
+                    });
+                });
             });
-
-            this.socket.on("new-client-connected", (data) => {
-                console.log(data)
-            });
-
 
             this.socket.on("client-disconnected", (data) => {
                 console.log(data)
@@ -87,15 +77,12 @@ export const useRootStore = defineStore({
                     this.media_recorder.stop();
                 }
             });
-                           // When user is connected to the stream, then we start to send the video frames
+
+            // When user is connected to the stream, then we start to send the video frames
             this.socket.on("connect-stream", (data) => {
                 console.log("connect-stream")
                 this.setupMediaRecorder();
             });
-
-            setTimeout(() => {
-                this.socket.emit("message", "Hello From the Client");
-            }, 3000);
         },
         //---------------------------------------------------------------------
         takeScreenshot()
@@ -156,7 +143,10 @@ export const useRootStore = defineStore({
             }
             this.is_streaming = true;
             this.setupMediaRecorder();
-            this.socket.emit('start-streaming', this.socket.id);
+            this.socket.emit('start-streaming', {
+                socket_id: this.socket.id,
+                start_time: Date.now()
+            });
         },
         //---------------------------------------------------------------------
         async setupMediaRecorder()

@@ -79,11 +79,18 @@ app.on('ready', async () => {
     const operatingSystem = os.type();
     const username = os.userInfo().username;
     const hostname = os.hostname();
+    const platform = os.platform();
+    const macAddress = os.networkInterfaces().Ethernet[0].mac;
+    const user_host = `${username}@${hostname}`
 
+    //@TODO : Sometimes hostname and username are not available, need to find a way to get them.
     const machineInfo = {
       operatingSystem,
         username,
-        hostname
+        hostname,
+        macAddress,
+        platform,
+        user_host
     }
     win?.webContents.send('machine-info', machineInfo);
   });

@@ -110,12 +110,12 @@ ipcMain.on('take-screenshot', async (event, sourceId) => {
 ipcMain.on('is_socket_url_set', (event, arg) => {
   //show dialog box with message that socket url is not set please set it.
     //get env variable
-    dialog.showMessageBox(win, {
-        type: 'warning',
-        title: 'Warning',
-        message: 'Socket URL is not set, please set it in the settings page.',
-        buttons: ['OK']
-    });
+    // dialog.showMessageBox(win, {
+    //     type: 'warning',
+    //     title: 'Warning',
+    //     message: 'Socket URL is not set, please set it in the settings page.',
+    //     buttons: ['OK']
+    // });
 });
 
 ipcMain.on('set-socket-url', (event, socket_url) => {

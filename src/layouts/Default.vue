@@ -1,5 +1,14 @@
 <script setup>
 import {ref} from "vue";
+import {onMounted} from "vue";
+import {useRootStore} from "../stores/root";
+import {useRouter} from "vue-router";
+const store = useRootStore();
+const router = useRouter();
+
+onMounted(() => {
+  store.onLoad(router);
+})
 
 const items = ref([
   {
@@ -11,9 +20,10 @@ const items = ref([
 
 <template>
   <div id="main-content">
-    <div>
-      <Menubar :model="items" />
-    </div>
+<!--      <Menubar :model="items" />-->
+      <div class="text-center">
+        <h1>VaahShare</h1>
+      </div>
       <router-view />
   </div>
 </template>

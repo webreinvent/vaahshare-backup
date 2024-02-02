@@ -16,16 +16,39 @@ export const useRootStore = defineStore({
         socket: null,
         video: null,
         media_recorder: null,
+        loading : true,
+        is_socket_url_set: false,
+        router: null,
+        socket_url: null,
+        app_info: null,
     }),
     getters: {},
     actions: {
-        onLoad()
+        onLoad(router)
         {
+            this.router = router;
+            window.ipcRenderer.on('app-info', (_event, app_info) => {
+                this.app_info = app_info;
+            });
+
+            // Handle navigation
+            this.HandleNavigation();
+
+            this.socket_url = import.meta.env.VITE_SOCKET_URL;
+            if(!this.socket_url)
+            {
+                window.ipcRenderer.send('is_socket_url_set', false);
+                console.error('Socket URL is not set');
+                return;
+            }
+            this.is_socket_url_set = true;
+            this.loading = false;
             this.socket = io(import.meta.env.VITE_SOCKET_URL, {
                 query: {
                     app: 'electron'
                 }
             });
+            // Handle socket events
             this.handleSocketEvents();
 
             // Get the available video sources
@@ -33,6 +56,15 @@ export const useRootStore = defineStore({
 
             // Save the screenshot
             this.saveScreenshot();
+        },
+        //---------------------------------------------------------------------
+        HandleNavigation()
+        {
+            console.log('HandleNavigation');
+            window.ipcRenderer.on('navigate', (_event, route_name) => {
+                console.log(route_name);
+                this.router.push({name: route_name});
+            });
         },
         //---------------------------------------------------------------------
         getSources()
@@ -178,7 +210,13 @@ export const useRootStore = defineStore({
             }
             this.socket.emit('stop-streaming', this.socket.id);
         },
-
+        //---------------------------------------------------------------------
+        saveSocketUrl()
+        {
+            //set the socket url to env variable
+            //verify that url is valid
+            window.ipcRenderer.send('set-socket-url', this.socket_url);
+        }
     }
 })
 

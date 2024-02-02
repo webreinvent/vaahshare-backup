@@ -23,10 +23,13 @@ const routes = [
                 name: 'about',
                 component: About,
             },
+            {
+                path: '/settings',
+                name: 'settings',
+                component: () => import('../pages/Settings.vue'),
+            }
         ]
     }
-
-
 ];
 
 const router = createRouter({

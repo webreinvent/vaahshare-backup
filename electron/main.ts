@@ -2,13 +2,9 @@ const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog }  = require(
 const fs = require('fs');
 
 import path from 'node:path'
-import os from 'os'
 import { createWindow } from './src/window';
 import { getMenuTemplate } from './src/menu';
-
-// Variable to store app info
-let appInfo = null;
-
+import { getSources, getMachineInfo, getAppInfo } from './src/index';
 // The built directory structure
 //
 // ├─┬─┬ dist
@@ -45,45 +41,21 @@ app.on('activate', () => {
 
 app.on('ready', async () => {
   win = createWindow()
-  win?.webContents.on('did-finish-load', () => {
-      try {
-      desktopCapturer.getSources({ types: ['window', 'screen'] }).then(async sources => {
-        win?.webContents.send('sources', sources);
-      })
-    } catch (error) {
-      console.log('error getting sources', error);
-    }
+  win?.webContents.on('did-finish-load', async () => {
+      //get sources
+      const sources = await getSources();
+      win?.webContents.send('sources', sources);
 
-    const operatingSystem = os.type();
-    const username = os.userInfo().username;
-    const hostname = os.hostname();
-    const platform = os.platform();
-    const macAddress = os.networkInterfaces().Ethernet[0].mac;
-    const user_host = `${username}@${hostname}`
+      //get machine info
+      const machineInfo = getMachineInfo();
+      win?.webContents.send('machine-info', machineInfo);
 
-    //@TODO : Sometimes hostname and username are not available, need to find a way to get them.
-    const machineInfo = {
-      operatingSystem,
-        username,
-        hostname,
-        macAddress,
-        platform,
-        user_host
-    }
-    win?.webContents.send('machine-info', machineInfo);
+      //read from package.json
+      const appInfo = getAppInfo();
+      win?.webContents.send('app-info', appInfo);
 
-    //read from package.json
-    const packageJson = require('../package.json');
-    const appVersion = packageJson.version;
-
-    appInfo = {
-        appVersion
-    }
-
-    win?.webContents.send('app-info', appInfo);
-
-    //Setting the menu
-    Menu.setApplicationMenu(Menu.buildFromTemplate(getMenuTemplate(win, app, appInfo)))
+      //Setting the menu
+      Menu.setApplicationMenu(Menu.buildFromTemplate(getMenuTemplate(win, app, appInfo)))
   });
 
 });
@@ -118,7 +90,7 @@ ipcMain.on('is_socket_url_set', (event, arg) => {
     // });
 });
 
-ipcMain.on('set-socket-url', (event, socket_url) => {
+ipcMain.on('save-settings', (event, {socket_url, company_id}) => {
     //App getting restarted automatically after setting the socket url so first show a dialog box to inform user that app will restart after setting the socket url.
     //@TODO : not sure socket url need to save in env file or not, need to check.
     dialog.showMessageBox(win, {
@@ -133,9 +105,11 @@ ipcMain.on('set-socket-url', (event, socket_url) => {
                 console.log('error reading env file', err);
                 return;
             }
-            const result = data.replace(/VITE_SOCKET_URL=.*/g, `VITE_SOCKET_URL=${socket_url}`);
+            const updated_data = data
+                .replace(/VITE_SOCKET_URL=.*/g, `VITE_SOCKET_URL=${socket_url}`)
+                .replace(/VITE_COMPANY_ID=.*/g, `VITE_COMPANY_ID=${company_id}`);
 
-            fs.writeFile(envFile, result, 'utf8', (err) => {
+            fs.writeFile(envFile, updated_data, 'utf8', (err) => {
                 if (err) {
                     console.log('error writing to env file', err);
                     return;

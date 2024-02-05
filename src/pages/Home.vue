@@ -6,7 +6,22 @@ const store = useRootStore();
 
 <template>
   <div class="window">
-    <div v-if="!store.loading && store.is_socket_url_set">
+
+    <div v-if="store.loading">
+      <div class="flex justify-content-center align-items-center">
+        Loading...
+      </div>
+    </div>
+
+    <div v-else-if="!store.is_socket_url_set">
+      <div class="flex justify-content-center align-items-center">
+        <Message severity="error">
+          Socket URL is not set or invalid. Please set the socket URL in settings.
+        </Message>
+      </div>
+    </div>
+    
+    <div v-else>
       <Card >
         <template #content>
           <div class="flex justify-content-center mb-3">
@@ -25,13 +40,7 @@ const store = useRootStore();
         </template>
       </Card>
     </div>
-    <div v-else>
-      <div class="flex justify-content-center align-items-center">
-        <Message severity="error">
-         Socket URL is not set. Please set the socket URL in the settings.
-        </Message>
-      </div>
-    </div>
+
   </div>
 </template>
 

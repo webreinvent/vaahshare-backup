@@ -79,7 +79,7 @@ ipcMain.on('take-screenshot', async (event, sourceId) => {
     }
 });
 
-ipcMain.on('is_socket_url_set', (event, arg) => {
+ipcMain.on('is_socket_url_set', () => {
   //show dialog box with message that socket url is not set please set it.
     //get env variable
     // dialog.showMessageBox(win, {
@@ -90,7 +90,7 @@ ipcMain.on('is_socket_url_set', (event, arg) => {
     // });
 });
 
-ipcMain.on('save-settings', (event, {socket_url, company_id}) => {
+ipcMain.on('save-settings', (_, {socket_url, company_id}) => {
     //App getting restarted automatically after setting the socket url so first show a dialog box to inform user that app will restart after setting the socket url.
     //@TODO : not sure socket url need to save in env file or not, need to check.
     dialog.showMessageBox(win, {
@@ -100,7 +100,7 @@ ipcMain.on('save-settings', (event, {socket_url, company_id}) => {
         buttons: ['OK']
     }).then(() => {
         const envFile = path.join(__dirname, '../.env');
-        fs.readFile(envFile, 'utf8', (err, data) => {
+        fs.readFile(envFile, 'utf8', (err : any, data : any) => {
             if (err) {
                 console.log('error reading env file', err);
                 return;
@@ -109,7 +109,7 @@ ipcMain.on('save-settings', (event, {socket_url, company_id}) => {
                 .replace(/VITE_SOCKET_URL=.*/g, `VITE_SOCKET_URL=${socket_url}`)
                 .replace(/VITE_COMPANY_ID=.*/g, `VITE_COMPANY_ID=${company_id}`);
 
-            fs.writeFile(envFile, updated_data, 'utf8', (err) => {
+            fs.writeFile(envFile, updated_data, 'utf8', (err : any) => {
                 if (err) {
                     console.log('error writing to env file', err);
                     return;

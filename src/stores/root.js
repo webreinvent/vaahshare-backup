@@ -16,16 +16,41 @@ export const useRootStore = defineStore({
         socket: null,
         video: null,
         media_recorder: null,
+        loading : true,
+        is_socket_url_set: false,
+        router: null,
+        socket_url: null,
+        app_info: null,
+        company_id: null,
     }),
     getters: {},
     actions: {
-        onLoad()
+        onLoad(router)
         {
+            this.router = router;
+            //Handle App Info
+            this.handleAppInfo();
+
+            // Handle navigation
+            this.HandleNavigation();
+
+            this.socket_url = import.meta.env.VITE_SOCKET_URL;
+            this.company_id = import.meta.env.VITE_COMPANY_ID;
+            if(!this.socket_url)
+            {
+                window.ipcRenderer.send('is_socket_url_set', false);
+                console.error('Socket URL is not set');
+                return;
+            }
+
+            this.is_socket_url_set = true;
+
             this.socket = io(import.meta.env.VITE_SOCKET_URL, {
                 query: {
                     app: 'electron'
                 }
             });
+            // Handle socket events
             this.handleSocketEvents();
 
             // Get the available video sources
@@ -33,6 +58,22 @@ export const useRootStore = defineStore({
 
             // Save the screenshot
             this.saveScreenshot();
+        },
+        //---------------------------------------------------------------------
+        handleAppInfo()
+        {
+            window.ipcRenderer.on('app-info', (_event, app_info) => {
+                this.app_info = app_info;
+            });
+        },
+        //---------------------------------------------------------------------
+        HandleNavigation()
+        {
+            console.log('HandleNavigation');
+            window.ipcRenderer.on('navigate', (_event, route_name) => {
+                console.log(route_name);
+                this.router.push({name: route_name});
+            });
         },
         //---------------------------------------------------------------------
         getSources()
@@ -58,10 +99,12 @@ export const useRootStore = defineStore({
         handleSocketEvents()
         {
             this.socket.on("connect", () => {
+                this.loading = false;
                 // Get the machine info on connect and then emit event to the server indicating that a new client has connected
                 window.ipcRenderer.on('machine-info', (_event, data) => {
                     this.socket.emit('client-connected', {
                         machine_info: data,
+                        company_id: this.company_id
                     });
                 });
             });
@@ -82,6 +125,13 @@ export const useRootStore = defineStore({
             this.socket.on("connect-stream", (data) => {
                 console.log("connect-stream")
                 this.setupMediaRecorder();
+            });
+
+            //on error
+            this.socket.on('connect_error', (error) => {
+                this.is_socket_url_set = false;
+                this.loading = false;
+                console.error('Socket connection error:', error);
             });
         },
         //---------------------------------------------------------------------
@@ -145,6 +195,7 @@ export const useRootStore = defineStore({
             this.setupMediaRecorder();
             this.socket.emit('start-streaming', {
                 socket_id: this.socket.id,
+                company_id: this.company_id,
                 start_time: Date.now()
             });
         },
@@ -178,7 +229,16 @@ export const useRootStore = defineStore({
             }
             this.socket.emit('stop-streaming', this.socket.id);
         },
-
+        //---------------------------------------------------------------------
+        saveSettings()
+        {
+            //set the socket url to env variable
+            //verify that url is valid
+            window.ipcRenderer.send('save-settings', {
+                socket_url: this.socket_url,
+                company_id: this.company_id
+            });
+        },
     }
 })
 

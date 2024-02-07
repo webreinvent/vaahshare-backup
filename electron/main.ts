@@ -4,7 +4,7 @@ const fs = require('fs');
 import path from 'node:path'
 import { createWindow } from './src/window';
 import { getMenuTemplate } from './src/menu';
-import { getSources, getMachineInfo, getAppInfo } from './src/index';
+import { getSources, getMachineInfo, getAppInfo, saveSettings } from './src/index';
 // The built directory structure
 //
 // ├─┬─┬ dist
@@ -99,22 +99,9 @@ ipcMain.on('save-settings', (_, {socket_url, company_id}) => {
         message: 'App will restart after setting the socket url.',
         buttons: ['OK']
     }).then(() => {
-        const envFile = path.join(__dirname, '../.env');
-        fs.readFile(envFile, 'utf8', (err : any, data : any) => {
-            if (err) {
-                console.log('error reading env file', err);
-                return;
-            }
-            const updated_data = data
-                .replace(/VITE_SOCKET_URL=.*/g, `VITE_SOCKET_URL=${socket_url}`)
-                .replace(/VITE_COMPANY_ID=.*/g, `VITE_COMPANY_ID=${company_id}`);
-
-            fs.writeFile(envFile, updated_data, 'utf8', (err : any) => {
-                if (err) {
-                    console.log('error writing to env file', err);
-                    return;
-                }
-            });
+        saveSettings({
+            socket_url,
+            company_id
         });
     });
 });

@@ -1,5 +1,4 @@
 const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog }  = require('electron');
-const fs = require('fs');
 
 import path from 'node:path'
 import { createWindow } from './src/window';

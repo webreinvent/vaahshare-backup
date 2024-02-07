@@ -39,7 +39,7 @@ export const getAppInfo = () => {
 export const saveSettings = (data) => {
     const { socket_url, company_id } = data;
     const envFile = path.join(__dirname, '../.env');
-    fs.readFile(envFile, 'utf8', (err : any, data : any) => {
+    fs.readFile(envFile, 'utf8', (err, data) => {
         if (err) {
             console.log('error reading env file', err);
             return;
@@ -48,7 +48,7 @@ export const saveSettings = (data) => {
             .replace(/VITE_SOCKET_URL=.*/g, `VITE_SOCKET_URL=${socket_url}`)
             .replace(/VITE_COMPANY_ID=.*/g, `VITE_COMPANY_ID=${company_id}`);
 
-        fs.writeFile(envFile, updated_data, 'utf8', (err : any) => {
+        fs.writeFile(envFile, updated_data, 'utf8', (err) => {
             if (err) {
                 console.log('error writing to env file', err);
                 return;

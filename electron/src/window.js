@@ -15,7 +15,9 @@ export const createWindow = () => {
             nodeIntegration: true,
         },
     })
-    win.webContents.openDevTools()
+    if(import.meta.env.VITE_APP_ENV !== 'production') {
+        win.webContents.openDevTools()
+    }
 
     // Test active push message to Renderer-process.
     win.webContents.on('did-finish-load', () => {

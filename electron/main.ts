@@ -15,6 +15,9 @@ settings.has('settings.socket_url').then((keyExists : any) => {
 ipcMain.handle('get-settings', async (_, key) => {
     return settings.get(key);
 });
+
+
+
 // The built directory structure
 //
 // ├─┬─┬ dist
@@ -50,6 +53,17 @@ app.on('activate', () => {
 })
 
 app.on('ready', async () => {
+    // Single instance lock
+    if (!app.requestSingleInstanceLock()) {
+        dialog.showMessageBox({
+            type: 'warning',
+            title: 'Warning',
+            message: 'App is already running.',
+            buttons: ['OK']
+        });
+        app.quit()
+    }
+
   win = createWindow()
   win?.webContents.on('did-finish-load', async () => {
       //get sources
@@ -103,15 +117,17 @@ ipcMain.on('is_socket_url_set', () => {
 ipcMain.on('save-settings', async (_, {socket_url, company_id}) => {
     await settings.set('settings.socket_url', socket_url);
     await settings.set('settings.company_id', company_id);
-    // win?.webContents.send('navigate', 'home'); //Redirect to home page is not working
-   //restart the app
+
     dialog.showMessageBox(win, {
         type: 'info',
         title: 'Info',
-        message: 'Settings saved successfully, app will restart now.',
+        message: 'Settings saved successfully. App will restart now.',
         buttons: ['OK']
-    }).then(() => {
-        app.relaunch()
-        app.exit()
+      }).then(() => {
+        //Restart only works in production
+        app.relaunch();
+        app.quit();
     });
+
+    // win?.webContents.send('navigate', 'home'); //Redirect to home page is not working
 });

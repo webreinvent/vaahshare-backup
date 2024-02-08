@@ -6,7 +6,7 @@ const store = useRootStore();
 <template>
     <Card>
       <template #content>
-        <form @submit="store.saveSettings">
+        <form @submit.prevent="store.saveSettings">
           <div class="flex flex-column align-items-center gap-2">
             <label for="socketUrl">Socket URL:</label>
             <InputText

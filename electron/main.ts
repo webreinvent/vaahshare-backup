@@ -3,7 +3,18 @@ const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog }  = require(
 import path from 'node:path'
 import { createWindow } from './src/window';
 import { getMenuTemplate } from './src/menu';
-import { getSources, getMachineInfo, getAppInfo, saveSettings } from './src/index';
+import { getSources, getMachineInfo, getAppInfo } from './src/index';
+const settings = require('electron-settings');
+
+// Set default settings
+settings.has('settings.socket_url').then((keyExists : any) => {
+    if (!keyExists) {
+        settings.set('settings.socket_url', 'http://localhost:3000');
+    }
+})
+ipcMain.handle('get-settings', async (_, key) => {
+    return settings.get(key);
+});
 // The built directory structure
 //
 // ├─┬─┬ dist
@@ -89,18 +100,18 @@ ipcMain.on('is_socket_url_set', () => {
     // });
 });
 
-ipcMain.on('save-settings', (_, {socket_url, company_id}) => {
-    //App getting restarted automatically after setting the socket url so first show a dialog box to inform user that app will restart after setting the socket url.
-    //@TODO : not sure socket url need to save in env file or not, need to check.
+ipcMain.on('save-settings', async (_, {socket_url, company_id}) => {
+    await settings.set('settings.socket_url', socket_url);
+    await settings.set('settings.company_id', company_id);
+    // win?.webContents.send('navigate', 'home'); //Redirect to home page is not working
+   //restart the app
     dialog.showMessageBox(win, {
         type: 'info',
         title: 'Info',
-        message: 'App will restart after setting the socket url.',
+        message: 'Settings saved successfully, app will restart now.',
         buttons: ['OK']
     }).then(() => {
-        saveSettings({
-            socket_url,
-            company_id
-        });
+        app.relaunch()
+        app.exit()
     });
 });

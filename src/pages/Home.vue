@@ -14,6 +14,14 @@ onMounted(() => {
 <template>
   <div class="window">
 
+    <div v-if="store.is_streaming && !store.online">
+      <div class="flex justify-content-center align-items-center">
+        <Message severity="error" :closable="false">
+          Streaming is paused. Please check internet connection and try again.
+        </Message>
+      </div>
+    </div>
+
     <div v-if="store.loading">
       <div class="flex justify-content-center align-items-center">
         Loading...
@@ -38,8 +46,11 @@ onMounted(() => {
             <label for="screenDropdown">Select Screen:</label>
             <Dropdown v-model="store.selected_source_id" :options="store.sources" optionLabel="name" placeholder="Select a Screen" class="w-full md:w-14rem" @change="store.onSourceChanged" option-value="id" />
             <div class="button-container mt-3 flex gap-3">
-              <Button class="button" @click="store.toggleStream" >
+              <Button class="button" @click="store.toggleStream" v-if="store.online">
                 {{ store.is_streaming ? 'Stop Streaming' : 'Start Streaming' }}
+              </Button>
+              <Button class="button" v-else>
+                Start Recording
               </Button>
               <Button class="button" @click="store.takeScreenshot">Take Screenshot</Button>
             </div>

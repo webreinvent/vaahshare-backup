@@ -22,12 +22,18 @@ export const useRootStore = defineStore({
         socket_url: null,
         app_info: null,
         company_id: null,
+        online: true,
+        is_paused: false,
     }),
     getters: {},
     actions: {
         async onLoad(router)
         {
             this.loading = true;
+
+            this.handleOnlineOfflineEvent();
+
+            console.log(this.is_internet_connected);
 
             this.router = router;
             //Handle App Info
@@ -55,7 +61,10 @@ export const useRootStore = defineStore({
             this.socket = io(this.socket_url, {
                 query: {
                     app: 'electron'
-                }
+                },
+                'reconnection': true,
+                'reconnectionDelay': 500,
+                'reconnectionAttempts': 3
             });
 
             // Handle socket events
@@ -106,6 +115,7 @@ export const useRootStore = defineStore({
         handleSocketEvents()
         {
             this.socket.on("connect", () => {
+                this.is_socket_url_set = true;
                 this.loading = false;
                 // Get the machine info on connect and then emit event to the server indicating that a new client has connected
                 window.ipcRenderer.on('machine-info', (_event, data) => {
@@ -138,7 +148,6 @@ export const useRootStore = defineStore({
             this.socket.on('connect_error', (error) => {
                 this.is_socket_url_set = false;
                 this.loading = false;
-                this.socket.disconnect();
                 console.error('Socket connection error:', error);
             });
         },
@@ -216,7 +225,7 @@ export const useRootStore = defineStore({
             this.media_recorder.ondataavailable = async (event) => {
                 console.log('ondataavailable', event.data.size)
                 // Send the data chunk over the WebSocket connection
-                if (event.data && event.data.size > 0) {
+                if (event.data && event.data.size > 0 && this.media_recorder.state === 'recording') {
                     this.socket.emit('video-frame', {
                         buffer: event.data,
                         socket_id: this.socket.id
@@ -238,6 +247,18 @@ export const useRootStore = defineStore({
             this.socket.emit('stop-streaming', this.socket.id);
         },
         //---------------------------------------------------------------------
+        pauseStream()
+        {
+            if (this.media_recorder && this.media_recorder.state === 'recording') {
+                this.media_recorder.pause();
+            }
+        },
+        //---------------------------------------------------------------------
+        resumeStream()
+        {
+            this.media_recorder.resume();
+        },
+        //---------------------------------------------------------------------
         saveSettings()
         {
             window.ipcRenderer.send('save-settings', {
@@ -246,6 +267,22 @@ export const useRootStore = defineStore({
             });
             // @TODO Tried to redirect to home page, but socket are not getting connected, need to fix this
         },
+        //---------------------------------------------------------------------
+        handleOnlineOfflineEvent()
+        {
+            window.addEventListener('online', () => {
+                console.log('online')
+                this.online = true;
+                this.socket.connect();
+            });
+
+            window.addEventListener('offline', () => {
+                this.online = false;
+                //pause the socket connection
+                this.socket.disconnect();
+                // this.pauseStream();
+            });
+        }
     }
 })
 

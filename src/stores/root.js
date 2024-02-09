@@ -25,8 +25,10 @@ export const useRootStore = defineStore({
     }),
     getters: {},
     actions: {
-        onLoad(router)
+        async onLoad(router)
         {
+            this.loading = true;
+
             this.router = router;
             //Handle App Info
             this.handleAppInfo();
@@ -34,22 +36,28 @@ export const useRootStore = defineStore({
             // Handle navigation
             this.HandleNavigation();
 
-            this.socket_url = import.meta.env.VITE_SOCKET_URL;
-            this.company_id = import.meta.env.VITE_COMPANY_ID;
+            // Get the settings
+            const { settings } = await window.ipcRenderer.invoke('get-settings');
+            this.socket_url = settings.socket_url;
+            this.company_id = settings.company_id;
+
+            console.log("Socket URL: ", this.socket_url);
+
+            // If socket url is not set
             if(!this.socket_url)
             {
-                window.ipcRenderer.send('is_socket_url_set', false);
                 console.error('Socket URL is not set');
                 return;
             }
 
+            // Set the socket url
             this.is_socket_url_set = true;
-
-            this.socket = io(import.meta.env.VITE_SOCKET_URL, {
+            this.socket = io(this.socket_url, {
                 query: {
                     app: 'electron'
                 }
             });
+
             // Handle socket events
             this.handleSocketEvents();
 
@@ -69,9 +77,8 @@ export const useRootStore = defineStore({
         //---------------------------------------------------------------------
         HandleNavigation()
         {
-            console.log('HandleNavigation');
             window.ipcRenderer.on('navigate', (_event, route_name) => {
-                console.log(route_name);
+                console.log("Redirecting to: ", route_name);
                 this.router.push({name: route_name});
             });
         },
@@ -131,6 +138,7 @@ export const useRootStore = defineStore({
             this.socket.on('connect_error', (error) => {
                 this.is_socket_url_set = false;
                 this.loading = false;
+                this.socket.disconnect();
                 console.error('Socket connection error:', error);
             });
         },
@@ -232,12 +240,11 @@ export const useRootStore = defineStore({
         //---------------------------------------------------------------------
         saveSettings()
         {
-            //set the socket url to env variable
-            //verify that url is valid
             window.ipcRenderer.send('save-settings', {
                 socket_url: this.socket_url,
                 company_id: this.company_id
             });
+            // @TODO Tried to redirect to home page, but socket are not getting connected, need to fix this
         },
     }
 })

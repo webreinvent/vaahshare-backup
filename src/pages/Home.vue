@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import {useRootStore} from "../stores/root";
 const store = useRootStore();
+
+import {onMounted} from "vue";
+import {useRouter} from "vue-router";
+const router = useRouter();
+
+onMounted(() => {
+  store.onLoad(router);
+})
 </script>
 
 <template>

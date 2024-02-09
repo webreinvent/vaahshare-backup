@@ -35,24 +35,3 @@ export const getAppInfo = () => {
     const appVersion = packageJson.version;
     return { appVersion };
 }
-
-export const saveSettings = (data) => {
-    const { socket_url, company_id } = data;
-    const envFile = path.join(__dirname, '../.env');
-    fs.readFile(envFile, 'utf8', (err : any, data : any) => {
-        if (err) {
-            console.log('error reading env file', err);
-            return;
-        }
-        const updated_data = data
-            .replace(/VITE_SOCKET_URL=.*/g, `VITE_SOCKET_URL=${socket_url}`)
-            .replace(/VITE_COMPANY_ID=.*/g, `VITE_COMPANY_ID=${company_id}`);
-
-        fs.writeFile(envFile, updated_data, 'utf8', (err : any) => {
-            if (err) {
-                console.log('error writing to env file', err);
-                return;
-            }
-        });
-    });
-}

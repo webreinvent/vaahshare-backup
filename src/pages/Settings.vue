@@ -13,7 +13,6 @@ const store = useRootStore();
                 v-model="store.socket_url"
                 class="w-full md:w-14rem"
                 required
-                pattern="https?://.+"
             />
           </div>
           <div class="flex flex-column align-items-center mt-3 gap-2">

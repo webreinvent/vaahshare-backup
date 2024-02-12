@@ -13,11 +13,11 @@ onMounted(() => {
 
 <template>
   <div class="window">
-
-    <div v-if="store.is_streaming && !store.online">
+    <div v-if="store.is_reconnecting">
       <div class="flex justify-content-center align-items-center">
         <Message severity="error" :closable="false">
-          Streaming is paused. Please check internet connection and try again.
+          Connection lost. Reconnecting... {{ store.reconnecting_time }}
+          And Now we can start recording and save in local file system.
         </Message>
       </div>
     </div>
@@ -46,7 +46,7 @@ onMounted(() => {
             <label for="screenDropdown">Select Screen:</label>
             <Dropdown v-model="store.selected_source_id" :options="store.sources" optionLabel="name" placeholder="Select a Screen" class="w-full md:w-14rem" @change="store.onSourceChanged" option-value="id" />
             <div class="button-container mt-3 flex gap-3">
-              <Button class="button" @click="store.toggleStream" v-if="store.online">
+              <Button class="button" @click="store.toggleStream" v-if="store.online || store.is_streaming" :disabled="store.is_reconnecting">
                 {{ store.is_streaming ? 'Stop Streaming' : 'Start Streaming' }}
               </Button>
               <Button class="button" v-else>

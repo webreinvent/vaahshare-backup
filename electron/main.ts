@@ -82,6 +82,22 @@ app.on('ready', async () => {
       Menu.setApplicationMenu(Menu.buildFromTemplate(getMenuTemplate(win, app, appInfo)))
   });
 
+    win?.on('close', (e) => {
+        e.preventDefault();
+        dialog.showMessageBox(win, {
+            type: 'question',
+            title: 'Confirm',
+            message: 'Are you sure you want to quit?',
+            buttons: ['Yes', 'No'],
+        }).then(async (response) => {
+            if (response.response === 0) {
+                win?.webContents.send('app-closed');
+                await settings.unset(`settings.selected_source_id`);
+                app.exit();
+            }
+        });
+    });
+
 });
 
 // @ts-ignore
@@ -114,20 +130,26 @@ ipcMain.on('is_socket_url_set', () => {
     // });
 });
 
-ipcMain.on('save-settings', async (_, {socket_url, company_id}) => {
-    await settings.set('settings.socket_url', socket_url);
-    await settings.set('settings.company_id', company_id);
-
-    dialog.showMessageBox(win, {
-        type: 'info',
-        title: 'Info',
-        message: 'Settings saved successfully. App will restart now.',
-        buttons: ['OK']
-      }).then(() => {
-        //Restart only works in production
-        app.relaunch();
-        app.quit();
+ipcMain.on('save-settings', async (_, data) => {
+    Object.keys(data).forEach(async (key) => {
+        await settings.set(`settings.${key}`, data[key]);
     });
 
+    if (Object.keys(data).includes('socket_url')) {
+        dialog.showMessageBox(win, {
+            type: 'info',
+            title: 'Info',
+            message: 'Settings saved successfully. App will restart now.',
+            buttons: ['OK']
+        }).then(() => {
+            //Restart only works in production
+            app.relaunch();
+            app.quit();
+        });
+    }
     // win?.webContents.send('navigate', 'home'); //Redirect to home page is not working
+});
+
+ipcMain.on('delete-settings', async (_, key) => {
+    await settings.unset(`settings.${key}`);
 });

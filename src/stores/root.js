@@ -24,16 +24,18 @@ export const useRootStore = defineStore({
         company_id: null,
         online: true,
         is_paused: false,
+        is_reconnecting: false,
+        reconnecting_interval: null,
+        reconnecting_time: 60,
     }),
     getters: {},
     actions: {
         async onLoad(router)
         {
+            console.log("onLoad");
             this.loading = true;
 
             this.handleOnlineOfflineEvent();
-
-            console.log(this.is_internet_connected);
 
             this.router = router;
             //Handle App Info
@@ -42,10 +44,15 @@ export const useRootStore = defineStore({
             // Handle navigation
             this.HandleNavigation();
 
+            // Handle App Close
+            this.handleAppClose();
+
             // Get the settings
             const { settings } = await window.ipcRenderer.invoke('get-settings');
+            console.log("Settings: ", settings);
             this.socket_url = settings.socket_url;
             this.company_id = settings.company_id;
+            this.selected_source_id = settings.selected_source_id;
 
             console.log("Socket URL: ", this.socket_url);
 
@@ -63,8 +70,9 @@ export const useRootStore = defineStore({
                     app: 'electron'
                 },
                 'reconnection': true,
-                'reconnectionDelay': 500,
-                'reconnectionAttempts': 3
+                'reconnectionDelay': 1000,
+                'timeout': 60000,  // Set the timeout to 10,000 milliseconds (10 seconds)
+                'reconnectionAttempts': 10,  // Set the maximum number of reconnection attempts to 1
             });
 
             // Handle socket events
@@ -73,14 +81,61 @@ export const useRootStore = defineStore({
             // Get the available video sources
             this.getSources();
 
+
+            // restart stream again if it was disconnected before
+            this.restartStream();
+
             // Save the screenshot
             this.saveScreenshot();
+        },
+        //---------------------------------------------------------------------
+        async restartStream()
+        {
+            if(this.selected_source_id){
+                console.log("Restarting the stream");
+                try {
+                    this.stream = await navigator.mediaDevices.getUserMedia({
+                        audio: false,
+                        video: {
+                            mandatory: {
+                                chromeMediaSource: 'desktop', //
+                                chromeMediaSourceId: this.selected_source_id,
+                                minWidth: 1280,
+                                maxWidth: 1280,
+                                minHeight: 720,
+                                maxHeight: 720
+                            }
+                        }
+                    })
+
+                    //Wait for dom to be laod, so that video element is available,
+                    //@TODO: find a better way to handle this
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                    this.handleStream(this.stream)
+
+                    this.startStream();
+                } catch (e) {
+                    // Currently not able to handle when a new source is added or not so we just remove it from the list
+                    this.sources = this.sources.filter(source => source.id !== this.selected_source_id)
+                    this.handleError(e)
+                }
+            } else {
+                console.log("No source found, no stream to restart");
+            }
         },
         //---------------------------------------------------------------------
         handleAppInfo()
         {
             window.ipcRenderer.on('app-info', (_event, app_info) => {
                 this.app_info = app_info;
+            });
+        },
+        //---------------------------------------------------------------------
+        handleAppClose()
+        {
+            window.ipcRenderer.on('app-closed', (_event, data) => {
+                this.socket.emit('app-closed');
             });
         },
         //---------------------------------------------------------------------
@@ -114,9 +169,9 @@ export const useRootStore = defineStore({
         //---------------------------------------------------------------------
         handleSocketEvents()
         {
+            this.loading = false;
             this.socket.on("connect", () => {
                 this.is_socket_url_set = true;
-                this.loading = false;
                 // Get the machine info on connect and then emit event to the server indicating that a new client has connected
                 window.ipcRenderer.on('machine-info', (_event, data) => {
                     this.socket.emit('client-connected', {
@@ -146,9 +201,36 @@ export const useRootStore = defineStore({
 
             //on error
             this.socket.on('connect_error', (error) => {
-                this.is_socket_url_set = false;
-                this.loading = false;
-                console.error('Socket connection error:', error);
+                if(this.online)
+                {
+                    //If the user is online and the socket is not connected that means the wrong socket url is set
+                    this.is_socket_url_set = false;
+                    this.loading = false;
+                }
+
+                if(!this.online && this.is_streaming)
+                {
+                    //If the user is offline and the socket is not connected that means the user is disconnected and we need to reconnect
+                    if(this.is_reconnecting) return;
+                    this.is_reconnecting = true;
+                    this.stopMediaRecorder();
+                    // decrement the time
+                    this.reconnecting_interval = setInterval(() => {
+                        this.reconnecting_time--;
+                        if(this.reconnecting_time === 0)
+                        {
+                            this.is_reconnecting = false;
+                            this.reconnecting_time = 60;
+                            this.stopStream();
+                            clearInterval(this.reconnecting_interval);
+                        }
+                    }, 1000);
+                }
+                console.log('Socket connection error:', error);
+            });
+
+            this.socket.on('disconnect', (reason) => {
+                console.log(`Disconnected from the server. Reason: ${reason}`);
             });
         },
         //---------------------------------------------------------------------
@@ -209,6 +291,7 @@ export const useRootStore = defineStore({
                 return alert('Please select a source')
             }
             this.is_streaming = true;
+
             this.setupMediaRecorder();
             this.socket.emit('start-streaming', {
                 socket_id: this.socket.id,
@@ -240,11 +323,18 @@ export const useRootStore = defineStore({
         stopStream()
         {
             this.is_streaming = false
+            this.selected_source_id = null
+            this.stopMediaRecorder();
+            this.deleteSettings('selected_source_id');
+            this.socket.emit('stop-streaming', this.socket.id);
+        },
+        //---------------------------------------------------------------------
+        stopMediaRecorder()
+        {
             if(this.media_recorder)
             {
                 this.media_recorder.stop();
             }
-            this.socket.emit('stop-streaming', this.socket.id);
         },
         //---------------------------------------------------------------------
         pauseStream()
@@ -268,19 +358,25 @@ export const useRootStore = defineStore({
             // @TODO Tried to redirect to home page, but socket are not getting connected, need to fix this
         },
         //---------------------------------------------------------------------
+        deleteSettings(key)
+        {
+            window.ipcRenderer.send('delete-settings', key);
+        },
+        //---------------------------------------------------------------------
         handleOnlineOfflineEvent()
         {
             window.addEventListener('online', () => {
-                console.log('online')
                 this.online = true;
-                this.socket.connect();
+                //reloading the page to connect the socket. socket.connect() is not working
+                window.location.reload();
             });
 
             window.addEventListener('offline', () => {
                 this.online = false;
-                //pause the socket connection
-                this.socket.disconnect();
-                // this.pauseStream();
+                window.ipcRenderer.send('save-settings', {
+                    selected_source_id: this.selected_source_id
+                });
+                console.log('offline')
             });
         }
     }

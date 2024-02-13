@@ -7,7 +7,7 @@ const store = useRootStore();
 <template>
   <div>
     <div class="flex justify-content-center align-items-center">
-      <Button label="Back"  class="p-button-rounded p-button-text" @click="store.router.push({name: 'home'})" />
+      <Button label="Back"  class="p-button-rounded p-button-text" @click="store.navigate('home')" />
     </div>
     <div class="flex justify-content-center align-items-center">
       <Message severity="info" :closable="false">

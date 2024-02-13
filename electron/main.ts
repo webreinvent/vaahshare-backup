@@ -1,10 +1,16 @@
 const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog }  = require('electron');
+import os from 'os'
+const fs = require('fs');
 
 import path from 'node:path'
 import { createWindow } from './src/window';
 import { getMenuTemplate } from './src/menu';
-import { getSources, getMachineInfo, getAppInfo } from './src/index';
+import { getSources, getMachineInfo, getAppInfo, createVideosFolder } from './src/index';
 const settings = require('electron-settings');
+
+createVideosFolder();
+let completeVideo = null;
+let videoBuffers = [];
 
 // Set default settings
 settings.has('settings.socket_url').then((keyExists : any) => {
@@ -82,7 +88,7 @@ app.on('ready', async () => {
       Menu.setApplicationMenu(Menu.buildFromTemplate(getMenuTemplate(win, app, appInfo)))
   });
 
-    win?.on('close', (e) => {
+    win?.on('close', (e : any) => {
         e.preventDefault();
         dialog.showMessageBox(win, {
             type: 'question',
@@ -131,9 +137,9 @@ ipcMain.on('is_socket_url_set', () => {
 });
 
 ipcMain.on('save-settings', async (_, data) => {
-    Object.keys(data).forEach(async (key) => {
+    for (const key of Object.keys(data)) {
         await settings.set(`settings.${key}`, data[key]);
-    });
+    }
 
     if (Object.keys(data).includes('socket_url')) {
         dialog.showMessageBox(win, {
@@ -144,7 +150,7 @@ ipcMain.on('save-settings', async (_, data) => {
         }).then(() => {
             //Restart only works in production
             app.relaunch();
-            app.quit();
+            app.exit();
         });
     }
     // win?.webContents.send('navigate', 'home'); //Redirect to home page is not working
@@ -152,4 +158,26 @@ ipcMain.on('save-settings', async (_, data) => {
 
 ipcMain.on('delete-settings', async (_, key) => {
     await settings.unset(`settings.${key}`);
+});
+
+
+ipcMain.on('save-video-frame', (_, data) => {
+    console.log('buffer', Buffer.from(data.buffer));
+    videoBuffers.push(Buffer.from(data.buffer));
+});
+
+ipcMain.on('stop-recording', async () => {
+
+    const videoPath = path.join(app.getPath('videos'), `video-${Date.now()}.webm`);
+    const completeVideo = new Uint8Array(videoBuffers.reduce((acc, frame) => [...acc, ...new Uint8Array(frame)], []));
+
+    const buffer = Buffer.from(completeVideo);
+
+    fs.writeFile(videoPath, buffer, (err) => {
+        if (err) {
+            console.error('Error saving video', err);
+        }
+        console.log('Video saved successfully at', videoPath);
+    });
+
 });

@@ -27,6 +27,8 @@ export const useRootStore = defineStore({
         is_reconnecting: false,
         reconnecting_interval: null,
         reconnecting_time: 60,
+        video_buffers: [],
+        is_recording: false,
     }),
     getters: {},
     actions: {
@@ -62,6 +64,7 @@ export const useRootStore = defineStore({
                 console.error('Socket URL is not set');
                 return;
             }
+            //delete socket cache
 
             // Set the socket url
             this.is_socket_url_set = true;
@@ -87,6 +90,9 @@ export const useRootStore = defineStore({
 
             // Save the screenshot
             this.saveScreenshot();
+
+            //on media recorder stop
+
         },
         //---------------------------------------------------------------------
         async restartStream()
@@ -287,6 +293,8 @@ export const useRootStore = defineStore({
         //---------------------------------------------------------------------
         startStream()
         {
+            //Delete the selected source id from the settings, we already utilized it to restart the stream
+            this.deleteSettings('selected_source_id');
             if (!this.selected_source_id) {
                 return alert('Please select a source')
             }
@@ -306,16 +314,24 @@ export const useRootStore = defineStore({
                 mimeType: 'video/webm; codecs="vp8, opus"'
             })
             this.media_recorder.ondataavailable = async (event) => {
-                console.log('ondataavailable', event.data.size)
+                console.log('ondataavailable', event.data)
                 // Send the data chunk over the WebSocket connection
                 if (event.data && event.data.size > 0 && this.media_recorder.state === 'recording') {
-                    this.socket.emit('video-frame', {
-                        buffer: event.data,
-                        socket_id: this.socket.id
-                    });
+
+                    if(this.online)
+                    {
+                        this.socket.emit('video-frame', {
+                            buffer: event.data,
+                            socket_id: this.socket.id
+                        });
+                    }
+                    else {
+                        window.ipcRenderer.send('save-video-frame', {
+                            buffer: event.data.toString('base64'),
+                        });
+                    }
                 }
             }
-
             // this will send the video frame every 2 seconds
             this.media_recorder.start(2000)
         },
@@ -378,7 +394,35 @@ export const useRootStore = defineStore({
                 });
                 console.log('offline')
             });
-        }
+        },
+        //---------------------------------------------------------------------
+        navigate(route)
+        {
+            this.router.push(route);
+        },
+        //---------------------------------------------------------------------
+        toggleRecording()
+        {
+            if (this.is_recording) {
+                this.stopRecording();
+            } else {
+                this.startRecording();
+            }
+        },
+        //---------------------------------------------------------------------
+        startRecording()
+        {
+            this.is_recording = true;
+            this.setupMediaRecorder();
+            // this.media_recorder.start();
+        },
+        //---------------------------------------------------------------------
+        stopRecording() {
+            this.is_recording = false;
+            this.media_recorder.stop();
+            window.ipcRenderer.send('stop-recording');
+        },
+        //---------------------------------------------------------------------
     }
 })
 

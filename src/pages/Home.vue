@@ -44,13 +44,13 @@ onMounted(() => {
           </div>
           <div class="flex flex-column align-items-center">
             <label for="screenDropdown">Select Screen:</label>
-            <Dropdown v-model="store.selected_source_id" :options="store.sources" optionLabel="name" placeholder="Select a Screen" class="w-full md:w-14rem" @change="store.onSourceChanged" option-value="id" />
+            <Dropdown :disabled="store.is_streaming" v-model="store.selected_source_id" :options="store.sources" optionLabel="name" placeholder="Select a Screen" class="w-full md:w-14rem" @change="store.onSourceChanged" option-value="id" />
             <div class="button-container mt-3 flex gap-3">
               <Button class="button" @click="store.toggleStream" v-if="store.online || store.is_streaming" :disabled="store.is_reconnecting">
                 {{ store.is_streaming ? 'Stop Streaming' : 'Start Streaming' }}
               </Button>
-              <Button class="button" v-else>
-                Start Recording
+              <Button class="button" v-else @click="store.toggleRecording" >
+                {{ store.is_recording ? 'Stop Recording' : 'Start Recording' }}
               </Button>
               <Button class="button" @click="store.takeScreenshot">Take Screenshot</Button>
             </div>

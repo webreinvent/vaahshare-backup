@@ -4,7 +4,12 @@ import path from 'node:path'
 const fs = require('fs');
 
 
-
+export const createVideosFolder = () => {
+    const videosPath = path.join(os.homedir(), 'Documents', app.getName(), 'videos');
+    if (!fs.existsSync(videosPath)) {
+        fs.mkdirSync(videosPath, { recursive: true });
+    }
+}
 
 export const getSources = () => {
    return desktopCapturer.getSources({ types: ['window', 'screen'] });

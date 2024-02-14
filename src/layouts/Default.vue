@@ -1,14 +1,14 @@
 <script setup>
 import {ref} from "vue";
-// import {onMounted} from "vue";
-// import {useRootStore} from "../stores/root";
-// import {useRouter} from "vue-router";
-// const store = useRootStore();
-// const router = useRouter();
+import {onMounted} from "vue";
+import {useRootStore} from "../stores/root";
+import {useRouter} from "vue-router";
+const store = useRootStore();
+const router = useRouter();
 //
-// onMounted(() => {
-//   store.onLoad(router);
-// })
+onMounted(() => {
+  store.onLoad(router);
+})
 
 const items = ref([
   {

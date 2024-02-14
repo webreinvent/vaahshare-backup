@@ -1,14 +1,9 @@
 <script setup lang="ts">
 import {useRootStore} from "../stores/root";
 const store = useRootStore();
+// import {useRouter} from "vue-router";
+// const router = useRouter();
 
-import {onMounted} from "vue";
-import {useRouter} from "vue-router";
-const router = useRouter();
-
-onMounted(() => {
-  store.onLoad(router);
-})
 </script>
 
 <template>
@@ -44,7 +39,7 @@ onMounted(() => {
           </div>
           <div class="flex flex-column align-items-center">
             <label for="screenDropdown">Select Screen:</label>
-            <Dropdown :disabled="store.is_streaming" v-model="store.selected_source_id" :options="store.sources" optionLabel="name" placeholder="Select a Screen" class="w-full md:w-14rem" @change="store.onSourceChanged" option-value="id" />
+            <Dropdown :disabled="store.is_streaming || store.is_recording" v-model="store.selected_source_id" :options="store.sources" optionLabel="name" placeholder="Select a Screen" class="w-full md:w-14rem" @change="store.onSourceChanged" option-value="id" />
             <div class="button-container mt-3 flex gap-3">
               <Button class="button" @click="store.toggleStream" v-if="store.online || store.is_streaming" :disabled="store.is_reconnecting">
                 {{ store.is_streaming ? 'Stop Streaming' : 'Start Streaming' }}

@@ -29,6 +29,7 @@ export const useRootStore = defineStore({
         reconnecting_time: 60,
         video_buffers: [],
         is_recording: false,
+        videos: [],
     }),
     getters: {},
     actions: {
@@ -412,6 +413,16 @@ export const useRootStore = defineStore({
             window.media.stopRecording();
         },
         //---------------------------------------------------------------------
+        async getVideos()
+        {
+            const videos =  await window.ipcRenderer.invoke('get-videos');
+            this.videos = videos;
+        },
+        //---------------------------------------------------------------------
+        bytesToMB(bytes)
+        {
+            return (bytes / (1024 * 1024)).toFixed(2);
+        }
     }
 })
 

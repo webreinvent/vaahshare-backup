@@ -11,6 +11,17 @@ export const createVideosFolder = () => {
     }
 }
 
+export const getVideos = () => {
+    const videos =  fs.readdirSync(getVideoFolder);
+    const videosWithSize = videos.map(video => {
+        const stats = fs.statSync(path.join(getVideoFolder, video));
+        const size = stats.size;
+        const createdAt = stats.birthtime;
+        return { name: video, size, createdAt };
+    });
+    return videosWithSize;
+}
+
 export const getSources = () => {
    return desktopCapturer.getSources({ types: ['window', 'screen'] });
 }

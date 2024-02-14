@@ -3,7 +3,7 @@ const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog }  = require(
 import path from 'path';
 import { createWindow } from './src/window';
 import { getMenuTemplate } from './src/menu';
-import { getSources, getMachineInfo, getAppInfo, createVideosFolder } from './src/index';
+import { getSources, getMachineInfo, getAppInfo, createVideosFolder, getVideos } from './src/index';
 const settings = require('electron-settings');
 
 app.commandLine.appendSwitch ("disable-http-cache");
@@ -19,6 +19,10 @@ settings.has('settings.socket_url').then((keyExists : any) => {
 
 ipcMain.handle('get-settings', async (_ : any, key : any) => {
     return settings.get(key);
+});
+
+ipcMain.handle('get-videos', async () => {
+    return getVideos();
 });
 
 

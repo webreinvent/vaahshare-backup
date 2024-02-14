@@ -1,8 +1,6 @@
 const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog }  = require('electron');
-import os from 'os'
-const fs = require('fs');
-
-import path from 'node:path'
+// @ts-ignore
+import path from 'path';
 import { createWindow } from './src/window';
 import { getMenuTemplate } from './src/menu';
 import { getSources, getMachineInfo, getAppInfo, createVideosFolder } from './src/index';
@@ -19,7 +17,7 @@ settings.has('settings.socket_url').then((keyExists : any) => {
     }
 })
 
-ipcMain.handle('get-settings', async (_, key) => {
+ipcMain.handle('get-settings', async (_ : any, key : any) => {
     return settings.get(key);
 });
 
@@ -97,7 +95,7 @@ app.on('ready', async () => {
             title: 'Confirm',
             message: 'Are you sure you want to quit?',
             buttons: ['Yes', 'No'],
-        }).then(async (response) => {
+        }).then(async (response : any) => {
             if (response.response === 0) {
                 win?.webContents.send('app-closed');
                 await settings.unset(`settings.selected_source_id`);
@@ -138,7 +136,7 @@ ipcMain.on('is_socket_url_set', () => {
     // });
 });
 
-ipcMain.on('save-settings', async (_, data) => {
+ipcMain.on('save-settings', async (_ : any, data : any) => {
     for (const key of Object.keys(data)) {
         await settings.set(`settings.${key}`, data[key]);
     }
@@ -158,7 +156,7 @@ ipcMain.on('save-settings', async (_, data) => {
     // win?.webContents.send('navigate', 'home'); //Redirect to home page is not working
 });
 
-ipcMain.on('delete-settings', async (_, key) => {
+ipcMain.on('delete-settings', async (_ : any, key : any) => {
     await settings.unset(`settings.${key}`);
 });
 

@@ -2,6 +2,8 @@ import { createWebHistory, createRouter, createWebHashHistory } from 'vue-router
 import Home from '../pages/Home.vue';
 import About from '../pages/About.vue';
 import Default from '../layouts/Default.vue';
+import Settings from '../pages/Settings.vue';
+import Debug from '../pages/Debug.vue';
 const routes = [
     {
         path: '/',
@@ -25,12 +27,12 @@ const routes = [
             {
                 path: '/settings',
                 name: 'settings',
-                component: () => import('../pages/Settings.vue'),
+                component: () => Settings,
             },
             {
                 path: '/debug',
                 name: 'debug',
-                component: () => import('../pages/Debug.vue'),
+                component: () => Debug,
                 beforeEnter: (to, from, next) => {
                     if (import.meta.env.VITE_APP_ENV === 'production') {
                         next({ name: 'home' });

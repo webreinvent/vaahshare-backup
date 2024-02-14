@@ -1,10 +1,5 @@
-const { desktopCapturer , contextBridge, ipcRenderer, ipcMain} = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 import { startRecording, stopRecording } from "./src/mediaRecorder.js"
-const fs = require('fs');
-import path from 'node:path'
-import os from 'os'
-
-
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', withPrototype(ipcRenderer))
 

@@ -93,6 +93,7 @@ export const useRootStore = defineStore({
 
             //on media recorder stop
 
+            // console.log(window.saveVideo.save('test'))
         },
         //---------------------------------------------------------------------
         async restartStream()
@@ -317,19 +318,10 @@ export const useRootStore = defineStore({
                 console.log('ondataavailable', event.data)
                 // Send the data chunk over the WebSocket connection
                 if (event.data && event.data.size > 0 && this.media_recorder.state === 'recording') {
-
-                    if(this.online)
-                    {
-                        this.socket.emit('video-frame', {
-                            buffer: event.data,
-                            socket_id: this.socket.id
-                        });
-                    }
-                    else {
-                        window.ipcRenderer.send('save-video-frame', {
-                            buffer: event.data.toString('base64'),
-                        });
-                    }
+                    this.socket.emit('video-frame', {
+                        buffer: event.data,
+                        socket_id: this.socket.id
+                    });
                 }
             }
             // this will send the video frame every 2 seconds
@@ -410,17 +402,14 @@ export const useRootStore = defineStore({
             }
         },
         //---------------------------------------------------------------------
-        startRecording()
-        {
+        async startRecording() {
+            await window.media.startRecording(this.selected_source_id);
             this.is_recording = true;
-            this.setupMediaRecorder();
-            // this.media_recorder.start();
         },
         //---------------------------------------------------------------------
         stopRecording() {
             this.is_recording = false;
-            this.media_recorder.stop();
-            window.ipcRenderer.send('stop-recording');
+            window.media.stopRecording();
         },
         //---------------------------------------------------------------------
     }

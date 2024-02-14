@@ -8,9 +8,9 @@ import { getMenuTemplate } from './src/menu';
 import { getSources, getMachineInfo, getAppInfo, createVideosFolder } from './src/index';
 const settings = require('electron-settings');
 
+app.commandLine.appendSwitch ("disable-http-cache");
+
 createVideosFolder();
-let completeVideo = null;
-let videoBuffers = [];
 
 // Set default settings
 settings.has('settings.socket_url').then((keyExists : any) => {
@@ -18,6 +18,7 @@ settings.has('settings.socket_url').then((keyExists : any) => {
         settings.set('settings.socket_url', 'http://localhost:3000');
     }
 })
+
 ipcMain.handle('get-settings', async (_, key) => {
     return settings.get(key);
 });
@@ -88,6 +89,7 @@ app.on('ready', async () => {
       Menu.setApplicationMenu(Menu.buildFromTemplate(getMenuTemplate(win, app, appInfo)))
   });
 
+    //When the app is closed
     win?.on('close', (e : any) => {
         e.preventDefault();
         dialog.showMessageBox(win, {
@@ -160,24 +162,3 @@ ipcMain.on('delete-settings', async (_, key) => {
     await settings.unset(`settings.${key}`);
 });
 
-
-ipcMain.on('save-video-frame', (_, data) => {
-    console.log('buffer', Buffer.from(data.buffer));
-    videoBuffers.push(Buffer.from(data.buffer));
-});
-
-ipcMain.on('stop-recording', async () => {
-
-    const videoPath = path.join(app.getPath('videos'), `video-${Date.now()}.webm`);
-    const completeVideo = new Uint8Array(videoBuffers.reduce((acc, frame) => [...acc, ...new Uint8Array(frame)], []));
-
-    const buffer = Buffer.from(completeVideo);
-
-    fs.writeFile(videoPath, buffer, (err) => {
-        if (err) {
-            console.error('Error saving video', err);
-        }
-        console.log('Video saved successfully at', videoPath);
-    });
-
-});

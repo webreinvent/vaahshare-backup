@@ -1,13 +1,13 @@
 const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog }  = require('electron');
+import { getVideoFolder } from "./helper.js"
 import os from 'os'
 import path from 'node:path'
 const fs = require('fs');
 
 
 export const createVideosFolder = () => {
-    const videosPath = path.join(os.homedir(), 'Documents', app.getName(), 'videos');
-    if (!fs.existsSync(videosPath)) {
-        fs.mkdirSync(videosPath, { recursive: true });
+    if (!fs.existsSync(getVideoFolder)) {
+        fs.mkdirSync(getVideoFolder, { recursive: true });
     }
 }
 
@@ -38,5 +38,6 @@ export const getMachineInfo = () => {
 export const getAppInfo = () => {
     const packageJson = require('../package.json');
     const appVersion = packageJson.version;
-    return { appVersion };
+    const name = packageJson.name;
+    return { appVersion, name };
 }

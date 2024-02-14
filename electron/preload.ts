@@ -1,7 +1,18 @@
 const { desktopCapturer , contextBridge, ipcRenderer, ipcMain} = require('electron');
+import { startRecording, stopRecording } from "./src/mediaRecorder.js"
+const fs = require('fs');
+import path from 'node:path'
+import os from 'os'
+
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', withPrototype(ipcRenderer))
+
+// MediaRecorder API
+contextBridge.exposeInMainWorld('media', {
+  startRecording,
+  stopRecording,
+});
 
 // `exposeInMainWorld` can't detect attributes and methods of `prototype`, manually patching it.
 function withPrototype(obj: Record<string, any>) {

@@ -4,9 +4,12 @@ import path from 'path';
 import { createWindow } from './src/window';
 import { getMenuTemplate } from './src/menu';
 import { getSources, getMachineInfo, getAppInfo, createVideosFolder, getVideos } from './src/index';
+import { getVideoFolder } from './src/helper.js';
+const fs = require('fs');
+import axios from 'axios';
 const settings = require('electron-settings');
 
-app.commandLine.appendSwitch ("disable-http-cache");
+app.commandLine.appendSwitch ("disable-http-cache"); //disable cache, maybe remove this later
 
 createVideosFolder();
 
@@ -24,7 +27,6 @@ ipcMain.handle('get-settings', async (_ : any, key : any) => {
 ipcMain.handle('get-videos', async () => {
     return getVideos();
 });
-
 
 
 // The built directory structure
@@ -163,4 +165,56 @@ ipcMain.on('save-settings', async (_ : any, data : any) => {
 ipcMain.on('delete-settings', async (_ : any, key : any) => {
     await settings.unset(`settings.${key}`);
 });
+
+// @TODO: Need to refactor this
+ipcMain.on('check-local-sessions', async (_ : any, data : any) => {
+    const videos = getVideos();
+    if (videos.length === 0) {
+        console.log('No videos in the local folder');
+        return;
+    }
+    for (const video of videos) {
+        const videoPath = path.join(getVideoFolder, video.name);
+        console.log(`Uploading video from: ${videoPath}`);
+        ///upload video to server
+        const formData = new FormData();
+        const file = fs.readFileSync(videoPath);
+        const fileName = path.basename(videoPath);
+
+        const blob = new Blob([file], { type: 'video/webm' });
+
+        formData.append('socket_id', data.socket_id);
+        formData.append('company_id', data.company_id);
+        formData.append('file', blob, fileName);
+
+
+        const axiosOptions = {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
+            onUploadProgress: (progressEvent) => {
+                const percentCompleted = Math.round(
+                    (progressEvent.loaded * 100) / progressEvent.total
+                );
+                console.log(`Upload progress for ${video.name}: ${percentCompleted}%`);
+            },
+        }
+
+        axios.post('http://localhost:3000/upload', formData, axiosOptions).then((response : any) => {
+            console.log(response.data.success);
+            // For now delete the video after uploading
+            try {
+                fs.unlinkSync(videoPath);
+                console.log('File removed', videoPath);
+            } catch (err) {
+                console.error(err);
+            }
+
+        }).catch((error : any) => {
+            console.log(error.response.data);
+        });
+    }
+});
+
+
 

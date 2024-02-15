@@ -187,6 +187,18 @@ export const useRootStore = defineStore({
                         company_id: this.company_id
                     });
                 });
+
+            });
+
+            this.socket.on('client-connected-success', (data) => {
+                // Check if any local sessions/recordings are pending to be uploaded, only if the user
+                // is online and connected to the server
+                console.log('Server Says: Client Connected Successfully');
+                console.log('Checking local sessions...');
+                window.ipcRenderer.send('check-local-sessions', {
+                    socket_id: this.socket.id,
+                    company_id: this.company_id
+                });
             });
 
             this.socket.on("client-disconnected", (data) => {

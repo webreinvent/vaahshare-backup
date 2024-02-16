@@ -8,6 +8,15 @@ import { getVideoFolder } from './src/helper.js';
 const fs = require('fs');
 import axios from 'axios';
 const settings = require('electron-settings');
+import { MediaApi } from './src/api/media.js';
+import { VideoUploader } from './src/videoUploader.js';
+
+// @ts-ignore
+let win: BrowserWindow | null
+const baseURL = import.meta.env.VITE_API_URL;
+const mediaApi = new MediaApi(baseURL);
+let videoUpload;
+
 
 app.commandLine.appendSwitch ("disable-http-cache"); //disable cache, maybe remove this later
 
@@ -28,7 +37,6 @@ ipcMain.handle('get-videos', async () => {
     return getVideos();
 });
 
-
 // The built directory structure
 //
 // ├─┬─┬ dist
@@ -42,8 +50,7 @@ process.env.DIST = path.join(__dirname, '../dist')
 process.env.VITE_PUBLIC = app.isPackaged ? process.env.DIST : path.join(process.env.DIST, '../public')
 
 
-// @ts-ignore
-let win: BrowserWindow | null
+
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
@@ -76,6 +83,7 @@ app.on('ready', async () => {
     }
 
   win = createWindow()
+  videoUpload = new VideoUploader(win, mediaApi);
   win?.webContents.on('did-finish-load', async () => {
       //get sources
       const sources = await getSources();
@@ -168,52 +176,8 @@ ipcMain.on('delete-settings', async (_ : any, key : any) => {
 
 // @TODO: Need to refactor this
 ipcMain.on('check-local-sessions', async (_ : any, data : any) => {
-    const videos = getVideos();
-    if (videos.length === 0) {
-        console.log('No videos in the local folder');
-        return;
-    }
-    for (const video of videos) {
-        const videoPath = path.join(getVideoFolder, video.name);
-        console.log(`Uploading video from: ${videoPath}`);
-        ///upload video to server
-        const formData = new FormData();
-        const file = fs.readFileSync(videoPath);
-        const fileName = path.basename(videoPath);
-
-        const blob = new Blob([file], { type: 'video/webm' });
-
-        formData.append('socket_id', data.socket_id);
-        formData.append('company_id', data.company_id);
-        formData.append('file', blob, fileName);
-
-
-        const axiosOptions = {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            },
-            onUploadProgress: (progressEvent) => {
-                const percentCompleted = Math.round(
-                    (progressEvent.loaded * 100) / progressEvent.total
-                );
-                console.log(`Upload progress for ${video.name}: ${percentCompleted}%`);
-            },
-        }
-
-        axios.post('http://localhost:3000/upload', formData, axiosOptions).then((response : any) => {
-            console.log(response.data.success);
-            // For now delete the video after uploading
-            try {
-                fs.unlinkSync(videoPath);
-                console.log('File removed', videoPath);
-            } catch (err) {
-                console.error(err);
-            }
-
-        }).catch((error : any) => {
-            console.log(error.response.data);
-        });
-    }
+    console.log('Cheking local sessions');
+    videoUpload.checkLocalSessions(data);
 });
 
 

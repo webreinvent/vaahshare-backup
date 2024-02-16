@@ -4,9 +4,9 @@ import { useRootStore } from "../stores/root";
 import Fieldset from 'primevue/fieldset';
 const store = useRootStore();
 
-onMounted(() => {
-  store.getVideos();
-});
+// onMounted(() => {
+//   store.getVideos();
+// });
 
 </script>
 <template>
@@ -25,7 +25,21 @@ onMounted(() => {
         Debug options only available in development mode.
       </Message>
     </div>
-      <div class="card">
+    <Card class="mb-3">
+      <template #title>Socket Information</template>
+      <template #content v-if="store.socket">
+        <p class="mb-2">
+          Socket ID: {{ store.socket.id }}
+        </p>
+        <p class="mb-2">
+          Socket URL: {{ store.socket.io.uri }}
+        </p>
+        <div class="mb-2">
+          Socket Callbacks: {{ Object.keys(store.socket._callbacks) }}
+        </div>
+      </template>
+    </Card>
+      <div class="card" v-if="!store.debug_page_loading">
         <Fieldset legend="Uploads">
           <DataTable :value="store.videos">
             <Column field="name" header="Name"></Column>
@@ -40,7 +54,12 @@ onMounted(() => {
               </template>
             </Column>
             <Column header="Status">
-
+              <template #body="slotProps">
+                <Button
+                    :label="slotProps.data.status === 'uploading' ? `Uploading ${slotProps.data.progress}` : slotProps.data.status"
+                    class="p-button-success p-button-rounded"
+               />
+              </template>
             </Column>
 
           </DataTable>

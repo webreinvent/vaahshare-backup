@@ -30,6 +30,7 @@ export const useRootStore = defineStore({
         video_buffers: [],
         is_recording: false,
         videos: [],
+        debug_page_loading : true,
     }),
     getters: {},
     actions: {
@@ -95,6 +96,24 @@ export const useRootStore = defineStore({
             //on media recorder stop
 
             // console.log(window.saveVideo.save('test'))
+            window.ipcRenderer.on('updated-videos', (event, videos) => {
+                this.debug_page_loading = false;
+                this.videos = videos;
+            });
+
+            window.ipcRenderer.on('upload-progress', (event, videoData) => {
+                this.videos = this.videos.map(v => {
+                    if(v.name === videoData.videoName){
+                        return {
+                            ...v,
+                            status: videoData.status,
+                            progress: videoData.progress,
+                            uploaded: videoData.uploaded
+                        }
+                    }
+                    return v;
+                });
+            });
         },
         //---------------------------------------------------------------------
         async restartStream()
@@ -197,7 +216,7 @@ export const useRootStore = defineStore({
                 console.log('Checking local sessions...');
                 window.ipcRenderer.send('check-local-sessions', {
                     socket_id: this.socket.id,
-                    company_id: this.company_id
+                    company_id: this.company_id,
                 });
             });
 
@@ -427,6 +446,7 @@ export const useRootStore = defineStore({
         //---------------------------------------------------------------------
         async getVideos()
         {
+            // Gettng the videos from the main process, as we can't access the file system from the renderer process
             const videos =  await window.ipcRenderer.invoke('get-videos');
             this.videos = videos;
         },

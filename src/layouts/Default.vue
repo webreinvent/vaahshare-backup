@@ -7,7 +7,11 @@ const store = useRootStore();
 const router = useRouter();
 //
 onMounted(() => {
+  // On load
   store.onLoad(router);
+
+  // Get Local Videos
+  store.getVideos();
 })
 
 const items = ref([

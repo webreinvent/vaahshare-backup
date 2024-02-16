@@ -1,6 +1,7 @@
 const fs = require('fs');
 import path from 'path';
 import axios from 'axios';
+import crypto from 'crypto';
 import { mediaApi } from "./api/media.js";
 import { getVideoFolder } from "./helper.js";
 import { getSources, getMachineInfo, getAppInfo, createVideosFolder, getVideos } from './index.js';
@@ -118,4 +119,24 @@ export class VideoUploader {
         //     console.error(err);
         // }
     }
+
+    //generating a unique identifier for the file content
+    async calculateFileHash(filePath, chunkSize = 1024 * 1024) {
+        return new Promise((resolve, reject) => {
+            const hash = crypto.createHash('sha256');
+            const stream = fs.createReadStream(filePath, { highWaterMark: chunkSize });
+            stream.on('data', (chunk) => {
+               hash.update(chunk);
+            });
+
+            stream.on('end', () => {
+                resolve(hash.digest('hex'));
+            });
+
+            stream.on('error', (error) => {
+                reject(error);
+            });
+        });
+    }
 }
+

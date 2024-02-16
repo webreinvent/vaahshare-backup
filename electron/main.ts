@@ -4,12 +4,9 @@ import path from 'path';
 import { createWindow } from './src/window';
 import { getMenuTemplate } from './src/menu';
 import { getSources, getMachineInfo, getAppInfo, createVideosFolder, getVideos } from './src/index';
-import { getVideoFolder } from './src/helper.js';
-const fs = require('fs');
-import axios from 'axios';
-const settings = require('electron-settings');
 import { MediaApi } from './src/api/media.js';
 import { VideoUploader } from './src/videoUploader.js';
+const settings = require('electron-settings');
 
 // @ts-ignore
 let win: BrowserWindow | null

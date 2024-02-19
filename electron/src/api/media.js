@@ -35,8 +35,8 @@ export class MediaApi {
         return data;
     }
 
-    async getListBySocketIdAndMediaNames(socketId, mediaNames) {
-        const { data } = await this.api.post(`${this.endpoint}/client/${socketId}`, { media_names: mediaNames });
+    async getListBySocketIdAndMediaNames(socketId, userHost, mediaNames) {
+        const { data } = await this.api.post(`${this.endpoint}/client/${socketId}/${userHost}`, { media_names: mediaNames });
         return data;
     }
 }

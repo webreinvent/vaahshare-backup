@@ -102,16 +102,12 @@ export const useRootStore = defineStore({
             });
 
             window.ipcRenderer.on('upload-progress', (event, videoData) => {
-                this.videos = this.videos.map(v => {
-                    if(v.name === videoData.videoName){
-                        return {
-                            ...v,
-                            status: videoData.status,
-                            progress: videoData.progress,
-                            uploaded: videoData.uploaded
-                        }
-                    }
-                    return v;
+                this.videos = this.updateObjectInArray(
+                    this.videos, 
+                    v => v.original_name === videoData.original_name, {
+                    status: videoData.status,
+                    progress: videoData.progress,
+                    uploaded: videoData.uploaded,
                 });
             });
         },
@@ -270,6 +266,21 @@ export const useRootStore = defineStore({
 
             this.socket.on('disconnect', (reason) => {
                 console.log(`Disconnected from the server. Reason: ${reason}`);
+            });
+
+            // Handling the video processing events
+            this.socket.on('processing-video', (data) => {
+                console.log('Processing Video...', data);
+                this.videos = this.updateObjectInArray(this.videos,
+                        v => v.original_name === data.media.original_name,
+                    { status: 'Processing', uploaded : true })
+            });
+
+            this.socket.on('video-processed', (data) => {
+                console.log('Video Processed...', data);
+                this.videos = this.updateObjectInArray(this.videos,
+                        v => v.original_name === data.media.original_name,
+                    { status: 'Completed', uploaded : true })
             });
         },
         //---------------------------------------------------------------------
@@ -454,7 +465,20 @@ export const useRootStore = defineStore({
         bytesToMB(bytes)
         {
             return (bytes / (1024 * 1024)).toFixed(2);
+        },
+        //---------------------------------------------------------------------
+        updateObjectInArray(array, condition, updateProperties) {
+            return array.map(obj => {
+                if (condition(obj)) {
+                    return {
+                        ...obj,
+                        ...updateProperties,
+                    };
+                }
+                return obj;
+            });
         }
+        //---------------------------------------------------------------------
     }
 })
 

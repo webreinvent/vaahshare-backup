@@ -14,23 +14,28 @@ export class VideoUploader {
 
     async checkLocalSessions(data) {
         const videos = getVideos();
+        const user_host = getMachineInfo().user_host;
         if (videos.length === 0) {
             console.log('No videos in the local folder');
             return;
         }
 
-        const videoNames = videos.map((video) => video.name);
+        // Update the videos object to include the original name of the video
+        const updatedVideosObj = this.updateVideosObj(videos);
+
+        const videoNames = updatedVideosObj.map((video) => video.original_name);
 
         try {
-            const response = await this.mediaApi.getListBySocketIdAndMediaNames(data.socket_id, videoNames);
+            // Get the list of videos uploaded to the server with the same socket_id and user_host
+            const response = await this.mediaApi.getListBySocketIdAndMediaNames(data.socket_id, user_host, videoNames);
             const medias = response.data.medias;
-            const mediasNames = medias.map((media) => media.name);
+            const mediasNames = medias.map((media) => media.original_name);
 
-            this.updateVideosStatus(videos, mediasNames);
+            this.updateVideosStatus(updatedVideosObj, mediasNames);
 
-            this.win?.webContents.send('updated-videos', videos);
+            this.win?.webContents.send('updated-videos', updatedVideosObj);
 
-            await this.uploadPendingVideos(videos, data);
+            await this.uploadPendingVideos(updatedVideosObj, data);
         } catch (error) {
             console.log('Error:', error);
         }
@@ -38,12 +43,12 @@ export class VideoUploader {
 
     updateVideosStatus(videos, mediasNames) {
         videos.forEach((video) => {
-            if (mediasNames.includes(video.name)) {
+            if (mediasNames.includes(video.original_name)) {
                 video.uploaded = true;
-                video.status = 'uploaded';
+                video.status = 'Completed';
             } else {
                 video.uploaded = false;
-                video.status = 'pending';
+                video.status = 'Pending';
             }
         });
     }
@@ -51,7 +56,7 @@ export class VideoUploader {
     async uploadPendingVideos(videos, data) {
         for (const video of videos) {
             if (video.uploaded) {
-                console.log(`Video ${video.name} is already uploaded`);
+                console.log(`Video ${video.original_name} is already uploaded. Skipping...`);
                 continue;
             }
 
@@ -74,12 +79,6 @@ export class VideoUploader {
 
         try {
             await this.uploadFile(formData, videoPath, video);
-            this.win?.webContents.send('upload-progress', {
-                videoName: video.name,
-                progress: 100,
-                status: 'uploaded',
-                uploaded: true,
-            });
         } catch (error) {
             console.log('Error uploading video:', error.response.data);
         }
@@ -89,7 +88,7 @@ export class VideoUploader {
         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
         console.log(`Upload progress for ${video.name}: ${percentCompleted}%`);
         this.win?.webContents.send('upload-progress', {
-            videoName: video.name,
+            original_name: video.original_name,
             progress: percentCompleted,
             status: 'uploading',
             uploaded: false,
@@ -106,6 +105,7 @@ export class VideoUploader {
             onUploadProgress: (progressEvent) => this.handleUploadProgress(video, progressEvent),
         };
         try {
+            // @TODO : need to get dynmaic socket api url here
             const response = await axios.post('http://localhost:3000/upload', formData, axiosOptions);
             console.log('Video uploaded:', video.name, response.data);
         } catch (error) {
@@ -120,7 +120,6 @@ export class VideoUploader {
         // }
     }
 
-    //generating a unique identifier for the file content
     async calculateFileHash(filePath, chunkSize = 1024 * 1024) {
         return new Promise((resolve, reject) => {
             const hash = crypto.createHash('sha256');
@@ -136,6 +135,20 @@ export class VideoUploader {
             stream.on('error', (error) => {
                 reject(error);
             });
+        });
+    }
+
+    calculateVideoHashes(videos) {
+        return Promise.all(videos.map((video) => this.calculateFileHash(path.join(getVideoFolder, video.name))));
+    }
+
+    updateVideosObj(videos) {
+        return videos.map((video) => {
+            const name = video.name.split('.')[0];
+            return {
+                ...video,
+                original_name: name,
+            };
         });
     }
 }

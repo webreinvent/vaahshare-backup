@@ -52,3 +52,10 @@ export const getAppInfo = () => {
     const name = packageJson.name;
     return { appVersion, name };
 }
+
+export const deleteAllVideos = () => {
+    const videos = getVideos();
+    videos.forEach(video => {
+        fs.unlinkSync(path.join(getVideoFolder, video.name));
+    });
+}

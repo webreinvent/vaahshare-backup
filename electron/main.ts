@@ -3,7 +3,7 @@ const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog }  = require(
 import path from 'path';
 import { createWindow } from './src/window';
 import { getMenuTemplate } from './src/menu';
-import { getSources, getMachineInfo, getAppInfo, createVideosFolder, getVideos } from './src/index';
+import { getSources, getMachineInfo, getAppInfo, createVideosFolder, getVideos, deleteAllVideos } from './src/index';
 import { MediaApi } from './src/api/media.js';
 import { VideoUploader } from './src/videoUploader.js';
 const settings = require('electron-settings');
@@ -18,6 +18,8 @@ let videoUpload;
 app.commandLine.appendSwitch ("disable-http-cache"); //disable cache, maybe remove this later
 
 createVideosFolder();
+deleteAllVideos(); // just for testing
+
 
 // Set default settings
 settings.has('settings.socket_url').then((keyExists : any) => {

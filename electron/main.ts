@@ -34,6 +34,10 @@ ipcMain.handle('get-videos', async () => {
     return getVideos();
 });
 
+ipcMain.handle('get-machine-info', async () => {
+    return getMachineInfo();
+});
+
 // The built directory structure
 //
 // ├─┬─┬ dist

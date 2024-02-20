@@ -10,9 +10,16 @@ const store = useRootStore();
   <div class="window">
     <div v-if="store.is_reconnecting">
       <div class="flex justify-content-center align-items-center">
+        <Message severity="success" :closable="false">
+          Internet is back. Reconnecting...
+        </Message>
+      </div>
+    </div>
+
+    <div v-if="!store.is_online && store.auto_record">
+      <div class="flex justify-content-center align-items-center">
         <Message severity="error" :closable="false">
-          Connection lost. Reconnecting... {{ store.reconnecting_time }}
-          And Now we can start recording and save in local file system.
+          You are offline. Local recording is enabled. which will be uploaded once you are online.
         </Message>
       </div>
     </div>
@@ -41,7 +48,7 @@ const store = useRootStore();
             <label for="screenDropdown">Select Screen:</label>
             <Dropdown :disabled="store.is_streaming || store.is_recording" v-model="store.selected_source_id" :options="store.sources" optionLabel="name" placeholder="Select a Screen" class="w-full md:w-14rem" @change="store.onSourceChanged" option-value="id" />
             <div class="button-container mt-3 flex gap-3">
-              <Button class="button" @click="store.toggleStream" v-if="store.online || store.is_streaming" :disabled="store.is_reconnecting">
+              <Button class="button" @click="store.toggleStream" v-if="store.online || store.is_streaming" >
                 {{ store.is_streaming ? 'Stop Streaming' : 'Start Streaming' }}
               </Button>
               <Button class="button" v-else @click="store.toggleRecording" >

@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build && electron-builder",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev-electron": "cross-env host='electron' vite"
   },
   "dependencies": {
     "axios": "^1.6.7",
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@electron/packager": "^18.1.3",
     "@vitejs/plugin-vue": "^4.3.4",
+    "cross-env": "^7.0.3",
     "electron": "^26.1.0",
     "electron-builder": "^24.6.4",
     "typescript": "^5.2.2",

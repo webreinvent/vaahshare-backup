@@ -14,7 +14,6 @@ const baseURL = import.meta.env.VITE_API_URL;
 const mediaApi = new MediaApi(baseURL);
 let videoUpload;
 
-
 app.commandLine.appendSwitch ("disable-http-cache"); //disable cache, maybe remove this later
 
 createVideosFolder();
@@ -38,6 +37,11 @@ ipcMain.handle('get-videos', async () => {
 
 ipcMain.handle('get-machine-info', async () => {
     return getMachineInfo();
+});
+
+ipcMain.on('update-window-title', (_ : any, title : any) => {
+    const updated_title = `${getAppInfo().name} - ${title}`
+    win?.setTitle(updated_title);
 });
 
 // The built directory structure
@@ -74,15 +78,17 @@ app.on('activate', () => {
 })
 
 app.on('ready', async () => {
-    // Single instance lock
-    if (!app.requestSingleInstanceLock()) {
-        dialog.showMessageBox({
-            type: 'warning',
-            title: 'Warning',
-            message: 'App is already running.',
-            buttons: ['OK']
-        });
-        app.quit()
+    if(import.meta.env.VITE_APP_ENV !== 'development') {
+        // Single instance lock
+        if (!app.requestSingleInstanceLock()) {
+            dialog.showMessageBox({
+                type: 'warning',
+                title: 'Warning',
+                message: 'App is already running.',
+                buttons: ['OK']
+            });
+            app.quit()
+        }
     }
 
   win = createWindow()

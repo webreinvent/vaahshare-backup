@@ -158,6 +158,7 @@ export const useRootStore = defineStore({
                 this.is_socket_url_set = true;
                 // Get the machine info on connect and then emit event to the server indicating that a new client has connected
                 const machine_info =  await window.ipcRenderer.invoke('get-machine-info');
+                window.ipcRenderer.send('update-window-title', machine_info.user_host);
                 this.socket.emit('client-connected', {
                     machine_info: machine_info,
                     company_id: this.company_id

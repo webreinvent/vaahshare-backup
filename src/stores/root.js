@@ -153,7 +153,6 @@ export const useRootStore = defineStore({
         //---------------------------------------------------------------------
         async handleSocketEvents()
         {
-            this.loading = false;
             this.socket.on("connect", async () => {
                 console.log('Connected to the server', this.socket.id);
                 this.is_socket_url_set = true;
@@ -180,6 +179,7 @@ export const useRootStore = defineStore({
             this.socket.on('client-connected-success', (data) => {
                 // Check if any local sessions/recordings are pending to be uploaded, only if the user
                 // is online and connected to the server
+                this.loading = false;
                 console.log('Server Says: Client Connected Successfully');
                 console.log('Checking local sessions...');
                 window.ipcRenderer.send('check-local-sessions', {

@@ -46,12 +46,12 @@ const store = useRootStore();
           </div>
           <div class="flex flex-column align-items-center">
             <label for="screenDropdown">Select Screen:</label>
-            <Dropdown :disabled="store.is_streaming || store.is_recording" v-model="store.selected_source_id" :options="store.sources" optionLabel="name" placeholder="Select a Screen" class="w-full md:w-14rem" @change="store.onSourceChanged" option-value="id" />
+            <Dropdown :disabled="store.is_streaming || store.is_recording || store.is_reconnecting" v-model="store.selected_source_id" :options="store.sources" optionLabel="name" placeholder="Select a Screen" class="w-full md:w-14rem" @change="store.onSourceChanged" option-value="id" />
             <div class="button-container mt-3 flex gap-3">
-              <Button class="button" @click="store.toggleStream" v-if="store.online || store.is_streaming" >
+              <Button :disabled="store.is_reconnecting" class="button" @click="store.toggleStream" v-if="store.online || store.is_streaming" >
                 {{ store.is_streaming ? 'Stop Streaming' : 'Start Streaming' }}
               </Button>
-              <Button class="button" v-else @click="store.toggleRecording" >
+              <Button :disabled="store.is_reconnecting" class="button" v-else @click="store.toggleRecording" >
                 {{ store.is_recording ? 'Stop Recording' : 'Start Recording' }}
               </Button>
               <Button class="button" @click="store.takeScreenshot">Take Screenshot</Button>

@@ -17,7 +17,7 @@ let videoUpload;
 app.commandLine.appendSwitch ("disable-http-cache"); //disable cache, maybe remove this later
 
 createVideosFolder();
-deleteAllVideos(); // just for testing
+// deleteAllVideos(); // just for testing
 
 
 // Set default settings

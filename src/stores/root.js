@@ -22,12 +22,26 @@ export const useRootStore = defineStore({
         socket_url: null,
         app_info: null,
         company_id: null,
+        online: true,
+        is_paused: false,
+        is_reconnecting: false,
+        reconnecting_interval: null,
+        reconnecting_time: 60,
+        video_buffers: [],
+        is_recording: false,
+        videos: [],
+        debug_page_loading : true,
+        auto_record: false,
+        machine_info : null,
     }),
     getters: {},
     actions: {
         async onLoad(router)
         {
+            console.log("onLoad");
             this.loading = true;
+
+            this.handleOnlineOfflineEvent();
 
             this.router = router;
             //Handle App Info
@@ -36,8 +50,12 @@ export const useRootStore = defineStore({
             // Handle navigation
             this.HandleNavigation();
 
+            // Handle App Close
+            this.handleAppClose();
+
             // Get the settings
             const { settings } = await window.ipcRenderer.invoke('get-settings');
+            console.log("Settings: ", settings);
             this.socket_url = settings.socket_url;
             this.company_id = settings.company_id;
 
@@ -49,13 +67,18 @@ export const useRootStore = defineStore({
                 console.error('Socket URL is not set');
                 return;
             }
+            //delete socket cache
 
             // Set the socket url
             this.is_socket_url_set = true;
             this.socket = io(this.socket_url, {
                 query: {
                     app: 'electron'
-                }
+                },
+                'reconnection': true,
+                'reconnectionDelay': 1000,
+                'timeout': 60000,  // Set the timeout to 10,000 milliseconds (10 seconds)
+                'reconnectionAttempts': 10,  // Set the maximum number of reconnection attempts to 1
             });
 
             // Handle socket events
@@ -66,12 +89,37 @@ export const useRootStore = defineStore({
 
             // Save the screenshot
             this.saveScreenshot();
+
+            //on media recorder stop
+
+            // console.log(window.saveVideo.save('test'))
+            window.ipcRenderer.on('updated-videos', (event, videos) => {
+                this.debug_page_loading = false;
+                this.videos = videos;
+            });
+
+            window.ipcRenderer.on('upload-progress', (event, videoData) => {
+                this.videos = this.updateObjectInArray(
+                    this.videos, 
+                    v => v.original_name === videoData.original_name, {
+                    status: videoData.status,
+                    progress: videoData.progress,
+                    uploaded: videoData.uploaded,
+                });
+            });
         },
         //---------------------------------------------------------------------
         handleAppInfo()
         {
             window.ipcRenderer.on('app-info', (_event, app_info) => {
                 this.app_info = app_info;
+            });
+        },
+        //---------------------------------------------------------------------
+        handleAppClose()
+        {
+            window.ipcRenderer.on('app-closed', (_event, data) => {
+                this.socket.emit('app-closed');
             });
         },
         //---------------------------------------------------------------------
@@ -103,16 +151,41 @@ export const useRootStore = defineStore({
             });
         },
         //---------------------------------------------------------------------
-        handleSocketEvents()
+        async handleSocketEvents()
         {
-            this.socket.on("connect", () => {
-                this.loading = false;
+            this.socket.on("connect", async () => {
+                console.log('Connected to the server', this.socket.id);
+                this.is_socket_url_set = true;
                 // Get the machine info on connect and then emit event to the server indicating that a new client has connected
-                window.ipcRenderer.on('machine-info', (_event, data) => {
-                    this.socket.emit('client-connected', {
-                        machine_info: data,
-                        company_id: this.company_id
-                    });
+                const machine_info =  await window.ipcRenderer.invoke('get-machine-info');
+                window.ipcRenderer.send('update-window-title', machine_info.user_host);
+                this.socket.emit('client-connected', {
+                    machine_info: machine_info,
+                    company_id: this.company_id
+                });
+
+               if(this.auto_record)
+                {
+                    console.log('Recording Finished, Starting the stream');
+                    this.stopRecording();
+                    this.startStream();
+                    this.auto_record = false;
+                    this.is_streaming = true;
+                }
+
+                //if user goes offline and then comes back online
+                this.is_reconnecting = false;
+            });
+
+            this.socket.on('client-connected-success', (data) => {
+                // Check if any local sessions/recordings are pending to be uploaded, only if the user
+                // is online and connected to the server
+                this.loading = false;
+                console.log('Server Says: Client Connected Successfully');
+                console.log('Checking local sessions...');
+                window.ipcRenderer.send('check-local-sessions', {
+                    socket_id: this.socket.id,
+                    company_id: this.company_id,
                 });
             });
 
@@ -136,10 +209,33 @@ export const useRootStore = defineStore({
 
             //on error
             this.socket.on('connect_error', (error) => {
-                this.is_socket_url_set = false;
-                this.loading = false;
-                this.socket.disconnect();
-                console.error('Socket connection error:', error);
+                if(this.online)
+                {
+                    //If the user is online and the socket is not connected that means the wrong socket url is set
+                    this.is_socket_url_set = false;
+                    this.loading = false;
+                }
+                console.log('Socket connection error:', error);
+            });
+
+            this.socket.on('disconnect', (reason) => {
+                console.log(`Disconnected from the server. Reason: ${reason}`);
+            });
+
+
+            // Handling the video processing events
+            this.socket.on('processing-video', (data) => {
+                console.log('Processing Video...', data);
+                this.videos = this.updateObjectInArray(this.videos,
+                        v => v.original_name === data.media.original_name,
+                    { status: 'Processing', uploaded : true })
+            });
+
+            this.socket.on('video-processed', (data) => {
+                console.log('Video Processed...', data);
+                this.videos = this.updateObjectInArray(this.videos,
+                        v => v.original_name === data.media.original_name,
+                    { status: 'Completed', uploaded : true })
             });
         },
         //---------------------------------------------------------------------
@@ -214,16 +310,15 @@ export const useRootStore = defineStore({
                 mimeType: 'video/webm; codecs="vp8, opus"'
             })
             this.media_recorder.ondataavailable = async (event) => {
-                console.log('ondataavailable', event.data.size)
+                console.log('ondataavailable', event.data)
                 // Send the data chunk over the WebSocket connection
-                if (event.data && event.data.size > 0) {
+                if (event.data && event.data.size > 0 && this.media_recorder.state === 'recording') {
                     this.socket.emit('video-frame', {
                         buffer: event.data,
                         socket_id: this.socket.id
                     });
                 }
             }
-
             // this will send the video frame every 2 seconds
             this.media_recorder.start(2000)
         },
@@ -231,21 +326,124 @@ export const useRootStore = defineStore({
         stopStream()
         {
             this.is_streaming = false
+            this.selected_source_id = null
+            this.stopMediaRecorder();
+            this.deleteSettings('selected_source_id');
+            this.socket.emit('stop-streaming', this.socket.id);
+        },
+        //---------------------------------------------------------------------
+        stopMediaRecorder()
+        {
             if(this.media_recorder)
             {
                 this.media_recorder.stop();
             }
-            this.socket.emit('stop-streaming', this.socket.id);
         },
         //---------------------------------------------------------------------
-        saveSettings()
+        pauseStream()
         {
-            window.ipcRenderer.send('save-settings', {
+            if (this.media_recorder && this.media_recorder.state === 'recording') {
+                this.media_recorder.pause();
+            }
+        },
+        //---------------------------------------------------------------------
+        resumeStream()
+        {
+            this.media_recorder.resume();
+        },
+        //---------------------------------------------------------------------
+        saveSettings(settings)
+        {
+            window.ipcRenderer.send('save-settings', settings);
+            // @TODO Tried to redirect to home page, but socket are not getting connected, need to fix this
+        },
+        //---------------------------------------------------------------------
+        saveSocketSettings()
+        {
+            this.saveSettings({
                 socket_url: this.socket_url,
                 company_id: this.company_id
             });
-            // @TODO Tried to redirect to home page, but socket are not getting connected, need to fix this
         },
+        //---------------------------------------------------------------------
+        deleteSettings(key)
+        {
+            window.ipcRenderer.send('delete-settings', key);
+        },
+        //---------------------------------------------------------------------
+        handleOnlineOfflineEvent()
+        {
+            const handleOnline = async () => {
+                this.online = true;
+                this.is_reconnecting = true;
+                console.log("You are online!");
+                this.socket.connect();
+            };
+
+            const handleOffline = () => {
+                this.online = false;
+                console.log("You are offline!");
+                if(this.is_streaming)
+                {
+                    this.is_streaming = false;
+                    this.stopMediaRecorder();
+                    this.auto_record = true;
+                    console.log("You are offline!, Recording now...");
+                    this.startRecording();
+                }
+            };
+            window.addEventListener('online', handleOnline);
+            window.addEventListener('offline', handleOffline);
+        },
+        //---------------------------------------------------------------------
+        navigate(route)
+        {
+            this.router.push(route);
+        },
+        //---------------------------------------------------------------------
+        toggleRecording()
+        {
+            if (this.is_recording) {
+                this.stopRecording();
+            } else {
+                this.startRecording();
+            }
+        },
+        //---------------------------------------------------------------------
+        async startRecording() {
+            await window.media.startRecording(this.selected_source_id);
+            this.is_recording = true;
+        },
+        //---------------------------------------------------------------------
+        stopRecording() {
+            this.is_recording = false;
+            window.media.stopRecording();
+        },
+        //---------------------------------------------------------------------
+        async getVideos()
+        {
+            // Gettng the videos from the main process, as we can't access the file system from the renderer process
+            const videos =  await window.ipcRenderer.invoke('get-videos');
+            this.videos = videos;
+        },
+        //---------------------------------------------------------------------
+        bytesToMB(bytes)
+        {
+            return (bytes / (1024 * 1024)).toFixed(2);
+        },
+        //---------------------------------------------------------------------
+        updateObjectInArray(array, condition, updateProperties) {
+            return array.map(obj => {
+                if (condition(obj)) {
+                    return {
+                        ...obj,
+                        ...updateProperties,
+                    };
+                }
+                return obj;
+            });
+        }
+        //---------------------------------------------------------------------
     }
 })
 

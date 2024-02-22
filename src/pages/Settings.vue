@@ -6,14 +6,13 @@ const store = useRootStore();
 <template>
     <Card>
       <template #content>
-        <form @submit.prevent="store.saveSettings">
+        <form @submit.prevent="store.saveSocketSettings">
           <div class="flex flex-column align-items-center gap-2">
             <label for="socketUrl">Socket URL:</label>
             <InputText
                 v-model="store.socket_url"
                 class="w-full md:w-14rem"
                 required
-                pattern="https?://.+"
             />
           </div>
           <div class="flex flex-column align-items-center mt-3 gap-2">

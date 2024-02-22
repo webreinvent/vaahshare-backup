@@ -1,18 +1,28 @@
 <script setup lang="ts">
 import {useRootStore} from "../stores/root";
 const store = useRootStore();
+// import {useRouter} from "vue-router";
+// const router = useRouter();
 
-import {onMounted} from "vue";
-import {useRouter} from "vue-router";
-const router = useRouter();
-
-onMounted(() => {
-  store.onLoad(router);
-})
 </script>
 
 <template>
   <div class="window">
+    <div v-if="store.is_reconnecting">
+      <div class="flex justify-content-center align-items-center">
+        <Message severity="success" :closable="false">
+          Internet is back. Reconnecting...
+        </Message>
+      </div>
+    </div>
+
+    <div v-if="!store.is_online && store.auto_record">
+      <div class="flex justify-content-center align-items-center">
+        <Message severity="error" :closable="false">
+          You are offline. Local recording is enabled. which will be uploaded once you are online.
+        </Message>
+      </div>
+    </div>
 
     <div v-if="store.loading">
       <div class="flex justify-content-center align-items-center">
@@ -36,10 +46,13 @@ onMounted(() => {
           </div>
           <div class="flex flex-column align-items-center">
             <label for="screenDropdown">Select Screen:</label>
-            <Dropdown v-model="store.selected_source_id" :options="store.sources" optionLabel="name" placeholder="Select a Screen" class="w-full md:w-14rem" @change="store.onSourceChanged" option-value="id" />
+            <Dropdown :disabled="store.is_streaming || store.is_recording || store.is_reconnecting" v-model="store.selected_source_id" :options="store.sources" optionLabel="name" placeholder="Select a Screen" class="w-full md:w-14rem" @change="store.onSourceChanged" option-value="id" />
             <div class="button-container mt-3 flex gap-3">
-              <Button class="button" @click="store.toggleStream" >
+              <Button :disabled="store.is_reconnecting" class="button" @click="store.toggleStream" v-if="store.online || store.is_streaming" >
                 {{ store.is_streaming ? 'Stop Streaming' : 'Start Streaming' }}
+              </Button>
+              <Button :disabled="store.is_reconnecting" class="button" v-else @click="store.toggleRecording" >
+                {{ store.is_recording ? 'Stop Recording' : 'Start Recording' }}
               </Button>
               <Button class="button" @click="store.takeScreenshot">Take Screenshot</Button>
             </div>

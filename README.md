@@ -1,18 +1,31 @@
-# Vue 3 + TypeScript + Vite
+# Introduction
+VaahShare Introduction
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## Setup
 
-## Recommended IDE Setup
+- Clone the repository
+```bash
+git clone https://github.com/webreinvent/vaahshare.git
+```
+- Now clone the API repository and follow the setup guide provided in the API repository
+```bash
+git clone https://github.com/webreinvent/vaah-sockets.git
+```
+- Run npm install in both repositories.
+- In the VaahShare repository, edit the environment file as follows:
+  
+| Key | Description | Value |
+| ------------- | -------- | ------------- |
+| VITE_APP_ENV  | VaahShare App Environment | development/production |
+| VITE_API_URL  | VaahShare API URL or Backend URL | http://localhost/himanshu/vaahshare-backend/public/api/
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+## Runnning the app
+- Run npm run dev to start the app.
+- The app is currently locked to a single instance, so you can only run one instance at a time.
+- To run multiple instances with different hosts, use `npm run dev-electron`.
+- This will start the app with a different host:  **electron**, allowing you to run multiple instances on a single machine.
 
-## Type Support For `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
-
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
-
-1. Disable the built-in TypeScript Extension
-   1. Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-   2. Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
+## Build the app
+- Before building the app, ensure you have updated the environment file with the correct `VITE_API_URL` and `VITE_APP_ENV` set to production.
+- Run `npm run build` to build the app.
+ -After that, the installer and unpacked build will be available in the `dist` folder.

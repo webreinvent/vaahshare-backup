@@ -197,14 +197,20 @@ export const useRootStore = defineStore({
                 console.log("disconnect-stream")
                 if(this.media_recorder)
                 {
+                    console.log('Stopping the media recorder');
                     this.media_recorder.stop();
                 }
             });
 
             // When user is connected to the stream, then we start to send the video frames
             this.socket.on("connect-stream", (data) => {
-                console.log("connect-stream")
-                this.setupMediaRecorder();
+                console.log("connect-stream", data)
+
+                if (this.is_streaming) {
+                    console.log('Connected to the stream, starting the stream');
+                    this.startStream();
+                }
+                // this.setupMediaRecorder();
             });
 
             //on error

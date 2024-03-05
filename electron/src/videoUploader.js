@@ -1,4 +1,5 @@
 const fs = require('fs');
+const settings = require('electron-settings');
 import path from 'path';
 import axios from 'axios';
 import crypto from 'crypto';
@@ -80,7 +81,7 @@ export class VideoUploader {
         try {
             await this.uploadFile(formData, videoPath, video);
         } catch (error) {
-            console.log('Error uploading video:', error.response.data);
+            console.log('Error uploading video:', error.response);
         }
     }
 
@@ -98,6 +99,7 @@ export class VideoUploader {
     async uploadFile(formData, videoPath, video) {
         // Simulating a delay for testing, remove in production
         await new Promise((resolve) => setTimeout(resolve, 5000));
+        const socket_url = await settings.get('settings.socket_url');
         const axiosOptions = {
             headers: {
                 'Content-Type': 'multipart/form-data',
@@ -105,11 +107,10 @@ export class VideoUploader {
             onUploadProgress: (progressEvent) => this.handleUploadProgress(video, progressEvent),
         };
         try {
-            // @TODO : need to get dynmaic socket api url here
-            const response = await axios.post('http://localhost:3000/upload', formData, axiosOptions);
+            const response = await axios.post(`${socket_url}/upload`, formData, axiosOptions);
             console.log('Video uploaded:', video.name, response.data);
         } catch (error) {
-            console.error('Error uploading video:', error.response.data);
+            console.error('Error uploading video:', error);
         }
         // Uncomment the following block to delete the video after uploading
         // try {

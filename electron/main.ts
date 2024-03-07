@@ -1,4 +1,4 @@
-const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog }  = require('electron');
+const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog, globalShortcut, powerMonitor }  = require('electron');
 // @ts-ignore
 import path from 'path';
 import { createWindow } from './src/window';
@@ -13,6 +13,7 @@ let win: BrowserWindow | null
 const baseURL = import.meta.env.VITE_API_URL;
 const mediaApi = new MediaApi(baseURL);
 let videoUpload;
+let interval: any;
 
 app.commandLine.appendSwitch ("disable-http-cache"); //disable cache, maybe remove this later
 
@@ -108,7 +109,31 @@ app.on('ready', async () => {
 
       //Setting the menu
       Menu.setApplicationMenu(Menu.buildFromTemplate(getMenuTemplate(win, app, appInfo)))
+
+      // Function to start the timer
+      function startIdleTimer() {
+          interval = setInterval(() => {
+              console.log(powerMonitor.getSystemIdleTime());
+              let idleTime = powerMonitor.getSystemIdleTime();
+              if (idleTime > 20) {
+                  // Stop the timer and show a dialog box
+                  clearInterval(interval);
+
+                  dialog.showMessageBox(win, {
+                      type: 'warning',
+                      title: 'Warning',
+                      message: 'System is idle, please continue working.',
+                      buttons: ['OK'],
+                  }).then(e => {
+                      startIdleTimer();
+                  });
+              }
+          }, 1000);
+      }
+
+      startIdleTimer();
   });
+
 
     //When the app is closed
     win?.on('close', (e : any) => {
@@ -183,11 +208,13 @@ ipcMain.on('delete-settings', async (_ : any, key : any) => {
     await settings.unset(`settings.${key}`);
 });
 
-// @TODO: Need to refactor this
 ipcMain.on('check-local-sessions', async (_ : any, data : any) => {
     console.log('Cheking local sessions');
     videoUpload.checkLocalSessions(data);
 });
+
+
+
 
 
 

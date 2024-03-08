@@ -5,7 +5,7 @@ import { getVideoFolder } from "./helper.js"
 import os from 'os'
 import path from 'node:path'
 const fs = require('fs');
-let idleThreshold = 600; // in seconds
+let idleThreshold = 5; // in seconds
 let idleInterval = null;
 
 

@@ -16,6 +16,7 @@ import {
 } from './src/index';
 import { MediaApi } from './src/api/media.js';
 import { VideoUploader } from './src/videoUploader.js';
+import {AlertsApi} from "./src/api/alerts";
 const settings = require('electron-settings');
 
 // @ts-ignore
@@ -23,6 +24,7 @@ let win: BrowserWindow | null
 const baseURL = import.meta.env.VITE_API_URL;
 const mediaApi = new MediaApi(baseURL);
 const clientsApi = new ClientsApi(baseURL);
+const alertsApi = new AlertsApi(baseURL);
 let videoUpload;
 let interval: any;
 
@@ -39,6 +41,7 @@ settings.has('settings.socket_url').then((keyExists : any) => {
     }
 })
 
+//Invokable functions
 ipcMain.handle('get-settings', async (_ : any, key : any) => {
     return settings.get(key);
 });
@@ -125,7 +128,7 @@ app.on('ready', async () => {
       //Setting the menu
       Menu.setApplicationMenu(Menu.buildFromTemplate(getMenuTemplate(win, app, appInfo)))
 
-      //start the timer
+      //Start idle timer
       startIdleTimer(win);
   });
 
@@ -213,6 +216,17 @@ ipcMain.on('toggle-idle-time-dialog', (_ : any, data : any) => {
         clearInterval(interval);
     } else {
         startIdleTimer(win);
+    }
+});
+
+ipcMain.on('save-alert-user-idle', async (_ : any, data : any) => {
+    try {
+        await alertsApi.createItem({
+            type: 'idle',
+            socket_id: data.socket_id,
+        });
+    } catch (error) {
+        console.error('Error:', error);
     }
 });
 

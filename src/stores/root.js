@@ -127,13 +127,12 @@ export const useRootStore = defineStore({
             return this.assets?.localization?.idle_message || "You are idle for a long time, press OK to continue";
         },
         //---------------------------------------------------------------------
-        handleIdleTime()
-        {
+        handleIdleTime() {
             window.ipcRenderer.on('toggle-idle-time-dialog', (_event, data) => {
-                if(this.isIdle()) {
+                if (this.isIdle()) {
                     this.show_idle_time_dialog = data.show;
-                } else {
-                    window.ipcRenderer.send('toggle-idle-time-dialog', { show: false });
+                    // If the user is idle for a long time, then we need to save the alert in the database
+                    window.ipcRenderer.send('save-alert-user-idle', {socket_id: this.socket.id});
                 }
             });
         },
@@ -198,6 +197,7 @@ export const useRootStore = defineStore({
                 this.is_socket_url_set = true;
                 // Get the machine info on connect and then emit event to the server indicating that a new client has connected
                 const machine_info =  await window.ipcRenderer.invoke('get-machine-info');
+
                 window.ipcRenderer.send('update-window-title', machine_info.user_host);
                 this.socket.emit('client-connected', {
                     machine_info: machine_info,

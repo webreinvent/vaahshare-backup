@@ -5,7 +5,7 @@ import { getVideoFolder } from "./helper.js"
 import os from 'os'
 import path from 'node:path'
 const fs = require('fs');
-let idleThreshold = 5 // in seconds
+let idleThreshold = 600; // in seconds
 let idleInterval = null;
 
 
@@ -73,7 +73,6 @@ export const deleteAllVideos = () => {
 export const startIdleTimer = (win) =>  {
     idleInterval = setInterval(() => {
         let idleTime = powerMonitor.getSystemIdleTime();
-        console.log('idle time', idleTime);
         if (idleTime > idleThreshold) {
             // Stop the timer and show a dialog box
             clearInterval(idleInterval);

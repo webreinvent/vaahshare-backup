@@ -1,9 +1,19 @@
-const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog, globalShortcut, powerMonitor }  = require('electron');
+import {ClientsApi} from "./src/api/clients";
+
+const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog, powerMonitor }  = require('electron');
 // @ts-ignore
 import path from 'path';
 import { createWindow } from './src/window';
 import { getMenuTemplate } from './src/menu';
-import { getSources, getMachineInfo, getAppInfo, createVideosFolder, getVideos, deleteAllVideos } from './src/index';
+import {
+    getSources,
+    getMachineInfo,
+    getAppInfo,
+    createVideosFolder,
+    getVideos,
+    deleteAllVideos,
+    startIdleTimer
+} from './src/index';
 import { MediaApi } from './src/api/media.js';
 import { VideoUploader } from './src/videoUploader.js';
 const settings = require('electron-settings');
@@ -12,6 +22,7 @@ const settings = require('electron-settings');
 let win: BrowserWindow | null
 const baseURL = import.meta.env.VITE_API_URL;
 const mediaApi = new MediaApi(baseURL);
+const clientsApi = new ClientsApi(baseURL);
 let videoUpload;
 let interval: any;
 
@@ -95,6 +106,10 @@ app.on('ready', async () => {
   win = createWindow()
   videoUpload = new VideoUploader(win, mediaApi);
   win?.webContents.on('did-finish-load', async () => {
+      //getAssets
+      const assets = await clientsApi.getAssets();
+      win?.webContents.send('assets', assets.data);
+
       //get sources
       const sources = await getSources();
       win?.webContents.send('sources', sources);
@@ -110,28 +125,8 @@ app.on('ready', async () => {
       //Setting the menu
       Menu.setApplicationMenu(Menu.buildFromTemplate(getMenuTemplate(win, app, appInfo)))
 
-      // Function to start the timer
-      function startIdleTimer() {
-          interval = setInterval(() => {
-              console.log(powerMonitor.getSystemIdleTime());
-              let idleTime = powerMonitor.getSystemIdleTime();
-              if (idleTime > 20) {
-                  // Stop the timer and show a dialog box
-                  clearInterval(interval);
-
-                  dialog.showMessageBox(win, {
-                      type: 'warning',
-                      title: 'Warning',
-                      message: 'System is idle, please continue working.',
-                      buttons: ['OK'],
-                  }).then(e => {
-                      startIdleTimer();
-                  });
-              }
-          }, 1000);
-      }
-
-      startIdleTimer();
+      //start the timer
+      startIdleTimer(win);
   });
 
 
@@ -211,6 +206,14 @@ ipcMain.on('delete-settings', async (_ : any, key : any) => {
 ipcMain.on('check-local-sessions', async (_ : any, data : any) => {
     console.log('Cheking local sessions');
     videoUpload.checkLocalSessions(data);
+});
+
+ipcMain.on('toggle-idle-time-dialog', (_ : any, data : any) => {
+    if (data.show) {
+        clearInterval(interval);
+    } else {
+        startIdleTimer(win);
+    }
 });
 
 

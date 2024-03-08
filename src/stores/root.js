@@ -33,6 +33,7 @@ export const useRootStore = defineStore({
         debug_page_loading : true,
         auto_record: false,
         machine_info : null,
+        show_idle_time_dialog: false,
     }),
     getters: {},
     actions: {
@@ -40,6 +41,9 @@ export const useRootStore = defineStore({
         {
             console.log("onLoad");
             this.loading = true;
+
+            // Get the assets
+            this.getAssets();
 
             this.handleOnlineOfflineEvent();
 
@@ -107,6 +111,42 @@ export const useRootStore = defineStore({
                     uploaded: videoData.uploaded,
                 });
             });
+
+            this.handleIdleTime();
+        },
+        //---------------------------------------------------------------------
+        async getAssets() {
+            window.ipcRenderer.on('assets', (_event, assets) => {
+                console.log("Assets: ", assets);
+                this.assets = assets;
+            });
+        },
+        //---------------------------------------------------------------------
+        getIdleTimeMessage()
+        {
+            return this.assets?.localization?.idle_message || "You are idle for a long time, press OK to continue";
+        },
+        //---------------------------------------------------------------------
+        handleIdleTime()
+        {
+            window.ipcRenderer.on('toggle-idle-time-dialog', (_event, data) => {
+                if(this.isIdle()) {
+                    this.show_idle_time_dialog = data.show;
+                } else {
+                    window.ipcRenderer.send('toggle-idle-time-dialog', { show: false });
+                }
+            });
+        },
+        //---------------------------------------------------------------------
+        onIdleTimeDialogClose()
+        {
+            this.show_idle_time_dialog = false;
+            window.ipcRenderer.send('toggle-idle-time-dialog', { show: false });
+        },
+        //---------------------------------------------------------------------
+        isIdle()
+        {
+          return !this.is_streaming || !this.is_recording;
         },
         //---------------------------------------------------------------------
         handleAppInfo()

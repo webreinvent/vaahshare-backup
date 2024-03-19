@@ -173,7 +173,9 @@ export const useRootStore = defineStore({
         getSources()
         {
             window.ipcRenderer.on('sources', (_event, sources) => {
-                this.sources = sources;
+                //By default select the entire screen
+                this.selected_source_id = sources[0].id;
+                this.handleSource();
             });
         },
         //---------------------------------------------------------------------
@@ -290,7 +292,7 @@ export const useRootStore = defineStore({
             window.ipcRenderer.send('take-screenshot', this.selected_source_id);
         },
         //---------------------------------------------------------------------
-        async onSourceChanged()
+        async handleSource()
         {
             try {
                 this.stream = await navigator.mediaDevices.getUserMedia({
@@ -308,8 +310,6 @@ export const useRootStore = defineStore({
                 })
                 this.handleStream(this.stream)
             } catch (e) {
-                // Currently not able to handle when a new source is added or not so we just remove it from the list
-                this.sources = this.sources.filter(source => source.id !== this.selected_source_id)
                 this.handleError(e)
             }
         },

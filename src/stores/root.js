@@ -13,7 +13,13 @@ export const useRootStore = defineStore({
         saving_screenshot: false,
         is_streaming: false,
         stream: null,
-        socket: null,
+        socket: {
+            id: null,
+            io: {
+                uri: null,
+            },
+            _callbacks: {},
+        },
         video: null,
         media_recorder: null,
         loading : true,
@@ -34,6 +40,7 @@ export const useRootStore = defineStore({
         auto_record: false,
         machine_info : null,
         show_idle_time_dialog: false,
+        is_online: true,
     }),
     getters: {},
     actions: {
@@ -372,7 +379,6 @@ export const useRootStore = defineStore({
         stopStream()
         {
             this.is_streaming = false
-            this.selected_source_id = null
             this.stopMediaRecorder();
             this.deleteSettings('selected_source_id');
             this.socket.emit('stop-streaming', this.socket.id);

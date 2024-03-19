@@ -1,6 +1,6 @@
 import {ClientsApi} from "./src/api/clients";
 
-const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog, powerMonitor }  = require('electron');
+const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog }  = require('electron');
 // @ts-ignore
 import path from 'path';
 import { createWindow } from './src/window';
@@ -11,12 +11,12 @@ import {
     getAppInfo,
     createVideosFolder,
     getVideos,
-    deleteAllVideos,
     startIdleTimer
 } from './src/index';
 import { MediaApi } from './src/api/media.js';
 import { VideoUploader } from './src/videoUploader.js';
 import {AlertsApi} from "./src/api/alerts";
+import VideoUploaderModel from "./src/models/VideoUploaderModel";
 const settings = require('electron-settings');
 
 // @ts-ignore
@@ -25,8 +25,8 @@ const baseURL = import.meta.env.VITE_API_URL;
 const mediaApi = new MediaApi(baseURL);
 const clientsApi = new ClientsApi(baseURL);
 const alertsApi = new AlertsApi(baseURL);
-let videoUpload;
-let interval: any;
+let videoUpload : VideoUploaderModel;
+let interval : NodeJS.Timeout;
 
 app.commandLine.appendSwitch ("disable-http-cache"); //disable cache, maybe remove this later
 

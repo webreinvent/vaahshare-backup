@@ -323,10 +323,13 @@ export const useRootStore = defineStore({
         //---------------------------------------------------------------------
         handleStream(stream)
         {
-            const video = document.querySelector('video')
-            video.srcObject = stream
-            video.onloadedmetadata = (e) => video.play()
-            this.video = video
+            //@TODO : Sometimes the video element is not available, so temporarily using setTimeout, need to fix this
+            setTimeout(() => {
+                const video = document.querySelector('video')
+                video.srcObject = stream
+                video.onloadedmetadata = (e) => video.play()
+                this.video = video
+            }, 0)
         },
         //---------------------------------------------------------------------
         handleError(e)

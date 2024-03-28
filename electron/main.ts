@@ -1,18 +1,32 @@
+import {ClientsApi} from "./src/api/clients";
+
 const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog }  = require('electron');
 // @ts-ignore
 import path from 'path';
 import { createWindow } from './src/window';
 import { getMenuTemplate } from './src/menu';
-import { getSources, getMachineInfo, getAppInfo, createVideosFolder, getVideos, deleteAllVideos } from './src/index';
+import {
+    getSources,
+    getMachineInfo,
+    getAppInfo,
+    createVideosFolder,
+    getVideos,
+    startIdleTimer
+} from './src/index';
 import { MediaApi } from './src/api/media.js';
 import { VideoUploader } from './src/videoUploader.js';
+import {AlertsApi} from "./src/api/alerts";
+import VideoUploaderModel from "./src/models/VideoUploaderModel";
 const settings = require('electron-settings');
 
 // @ts-ignore
 let win: BrowserWindow | null
 const baseURL = import.meta.env.VITE_API_URL;
 const mediaApi = new MediaApi(baseURL);
-let videoUpload;
+const clientsApi = new ClientsApi(baseURL);
+const alertsApi = new AlertsApi(baseURL);
+let videoUpload : VideoUploaderModel;
+let interval : NodeJS.Timeout;
 
 app.commandLine.appendSwitch ("disable-http-cache"); //disable cache, maybe remove this later
 
@@ -27,6 +41,7 @@ settings.has('settings.socket_url').then((keyExists : any) => {
     }
 })
 
+//Invokable functions
 ipcMain.handle('get-settings', async (_ : any, key : any) => {
     return settings.get(key);
 });
@@ -94,6 +109,10 @@ app.on('ready', async () => {
   win = createWindow()
   videoUpload = new VideoUploader(win, mediaApi);
   win?.webContents.on('did-finish-load', async () => {
+      //getAssets
+      const assets = await clientsApi.getAssets();
+      win?.webContents.send('assets', assets.data);
+
       //get sources
       const sources = await getSources();
       win?.webContents.send('sources', sources);
@@ -108,7 +127,11 @@ app.on('ready', async () => {
 
       //Setting the menu
       Menu.setApplicationMenu(Menu.buildFromTemplate(getMenuTemplate(win, app, appInfo)))
+
+      //Start idle timer
+      startIdleTimer(win);
   });
+
 
     //When the app is closed
     win?.on('close', (e : any) => {
@@ -183,11 +206,32 @@ ipcMain.on('delete-settings', async (_ : any, key : any) => {
     await settings.unset(`settings.${key}`);
 });
 
-// @TODO: Need to refactor this
 ipcMain.on('check-local-sessions', async (_ : any, data : any) => {
     console.log('Cheking local sessions');
     videoUpload.checkLocalSessions(data);
 });
+
+ipcMain.on('toggle-idle-time-dialog', (_ : any, data : any) => {
+    if (data.show) {
+        clearInterval(interval);
+    } else {
+        startIdleTimer(win);
+    }
+});
+
+ipcMain.on('save-alert-user-idle', async (_ : any, data : any) => {
+    try {
+        await alertsApi.createItem({
+            type: 'idle',
+            socket_id: data.socket_id,
+        });
+    } catch (error) {
+        console.error('Error:', error);
+    }
+});
+
+
+
 
 
 

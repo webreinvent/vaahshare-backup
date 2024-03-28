@@ -13,7 +13,13 @@ export const useRootStore = defineStore({
         saving_screenshot: false,
         is_streaming: false,
         stream: null,
-        socket: null,
+        socket: {
+            id: null,
+            io: {
+                uri: null,
+            },
+            _callbacks: {},
+        },
         video: null,
         media_recorder: null,
         loading : true,
@@ -33,6 +39,8 @@ export const useRootStore = defineStore({
         debug_page_loading : true,
         auto_record: false,
         machine_info : null,
+        show_idle_time_dialog: false,
+        is_online: true,
     }),
     getters: {},
     actions: {
@@ -40,6 +48,9 @@ export const useRootStore = defineStore({
         {
             console.log("onLoad");
             this.loading = true;
+
+            // Get the assets
+            this.getAssets();
 
             this.handleOnlineOfflineEvent();
 
@@ -107,6 +118,41 @@ export const useRootStore = defineStore({
                     uploaded: videoData.uploaded,
                 });
             });
+
+            this.handleIdleTime();
+        },
+        //---------------------------------------------------------------------
+        async getAssets() {
+            window.ipcRenderer.on('assets', (_event, assets) => {
+                console.log("Assets: ", assets);
+                this.assets = assets;
+            });
+        },
+        //---------------------------------------------------------------------
+        getIdleTimeMessage()
+        {
+            return this.assets?.localization?.idle_message || "You are idle for a long time, press OK to continue";
+        },
+        //---------------------------------------------------------------------
+        handleIdleTime() {
+            window.ipcRenderer.on('toggle-idle-time-dialog', (_event, data) => {
+                if (this.isIdle()) {
+                    this.show_idle_time_dialog = data.show;
+                    // If the user is idle for a long time, then we need to save the alert in the database
+                    window.ipcRenderer.send('save-alert-user-idle', {socket_id: this.socket.id});
+                }
+            });
+        },
+        //---------------------------------------------------------------------
+        onIdleTimeDialogClose()
+        {
+            this.show_idle_time_dialog = false;
+            window.ipcRenderer.send('toggle-idle-time-dialog', { show: false });
+        },
+        //---------------------------------------------------------------------
+        isIdle()
+        {
+          return !this.is_streaming || !this.is_recording;
         },
         //---------------------------------------------------------------------
         handleAppInfo()
@@ -134,7 +180,9 @@ export const useRootStore = defineStore({
         getSources()
         {
             window.ipcRenderer.on('sources', (_event, sources) => {
-                this.sources = sources;
+                //By default select the entire screen
+                this.selected_source_id = sources[0].id;
+                this.handleSource();
             });
         },
         //---------------------------------------------------------------------
@@ -158,6 +206,7 @@ export const useRootStore = defineStore({
                 this.is_socket_url_set = true;
                 // Get the machine info on connect and then emit event to the server indicating that a new client has connected
                 const machine_info =  await window.ipcRenderer.invoke('get-machine-info');
+
                 window.ipcRenderer.send('update-window-title', machine_info.user_host);
                 this.socket.emit('client-connected', {
                     machine_info: machine_info,
@@ -250,7 +299,7 @@ export const useRootStore = defineStore({
             window.ipcRenderer.send('take-screenshot', this.selected_source_id);
         },
         //---------------------------------------------------------------------
-        async onSourceChanged()
+        async handleSource()
         {
             try {
                 this.stream = await navigator.mediaDevices.getUserMedia({
@@ -268,18 +317,19 @@ export const useRootStore = defineStore({
                 })
                 this.handleStream(this.stream)
             } catch (e) {
-                // Currently not able to handle when a new source is added or not so we just remove it from the list
-                this.sources = this.sources.filter(source => source.id !== this.selected_source_id)
                 this.handleError(e)
             }
         },
         //---------------------------------------------------------------------
         handleStream(stream)
         {
-            const video = document.querySelector('video')
-            video.srcObject = stream
-            video.onloadedmetadata = (e) => video.play()
-            this.video = video
+            //@TODO : Sometimes the video element is not available, so temporarily using setTimeout, need to fix this
+            setTimeout(() => {
+                const video = document.querySelector('video')
+                video.srcObject = stream
+                video.onloadedmetadata = (e) => video.play()
+                this.video = video
+            }, 0)
         },
         //---------------------------------------------------------------------
         handleError(e)
@@ -332,7 +382,6 @@ export const useRootStore = defineStore({
         stopStream()
         {
             this.is_streaming = false
-            this.selected_source_id = null
             this.stopMediaRecorder();
             this.deleteSettings('selected_source_id');
             this.socket.emit('stop-streaming', this.socket.id);

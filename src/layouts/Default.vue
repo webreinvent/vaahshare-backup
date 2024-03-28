@@ -3,6 +3,7 @@ import {ref} from "vue";
 import {onMounted} from "vue";
 import {useRootStore} from "../stores/root";
 import {useRouter} from "vue-router";
+import IdleTimeDialog from "../components/IdleTimeDialog.vue";
 const store = useRootStore();
 const router = useRouter();
 //
@@ -29,5 +30,7 @@ const items = ref([
         <h1>VaahShare</h1>
       </div>
       <router-view />
+
+      <IdleTimeDialog />
   </div>
 </template>

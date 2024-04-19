@@ -321,15 +321,18 @@ export const useRootStore = defineStore({
             }
         },
         //---------------------------------------------------------------------
-        handleStream(stream)
-        {
-            //@TODO : Sometimes the video element is not available, so temporarily using setTimeout, need to fix this
-            setTimeout(() => {
-                const video = document.querySelector('video')
-                video.srcObject = stream
-                video.onloadedmetadata = (e) => video.play()
-                this.video = video
-            }, 0)
+        handleStream(stream) {
+            const initializeVideo = () => {
+                const video = document.querySelector('video');
+                if (video) {
+                    video.srcObject = stream;
+                    video.onloadedmetadata = (e) => video.play();
+                    this.video = video;
+                } else {
+                    setTimeout(initializeVideo, 100); // Retry after 100ms if video element is not available yet
+                }
+            };
+            initializeVideo();
         },
         //---------------------------------------------------------------------
         handleError(e)

@@ -3,7 +3,7 @@
   "description": "Live share app",
   "author": "WebReinvent",
   "private": true,
-  "version": "0.0.6",
+  "version": "0.0.7",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build && electron-builder",

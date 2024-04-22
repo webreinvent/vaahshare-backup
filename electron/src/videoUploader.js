@@ -3,7 +3,7 @@ const settings = require('electron-settings');
 import path from 'path';
 import axios from 'axios';
 import crypto from 'crypto';
-import { mediaApi } from "./api/media.js";
+import { MediaApi } from "./api/media.js";
 import { getVideoFolder } from "./helper.js";
 import { getSources, getMachineInfo, getAppInfo, createVideosFolder, getVideos } from './index.js';
 
@@ -29,6 +29,7 @@ export class VideoUploader {
         try {
             // Get the list of videos uploaded to the server with the same socket_id and user_host
             const response = await this.mediaApi.getListBySocketIdAndMediaNames(data.socket_id, user_host, videoNames);
+            if(!response.data) return;
             const medias = response.data.medias;
             const mediasNames = medias.map((media) => media.original_name);
 
@@ -110,7 +111,7 @@ export class VideoUploader {
             const response = await axios.post(`${socket_url}/upload`, formData, axiosOptions);
             console.log('Video uploaded:', video.name, response.data);
         } catch (error) {
-            console.error('Error uploading video:', error);
+            console.error('Error uploading video:', error.response);
         }
         // Uncomment the following block to delete the video after uploading
         // try {

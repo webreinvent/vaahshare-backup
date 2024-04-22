@@ -177,13 +177,12 @@ export const useRootStore = defineStore({
             });
         },
         //---------------------------------------------------------------------
-        getSources()
+        async getSources()
         {
-            window.ipcRenderer.on('sources', (_event, sources) => {
-                //By default select the entire screen
-                this.selected_source_id = sources[0].id;
-                this.handleSource();
-            });
+            const sources = await window.ipcRenderer.invoke('get-sources');
+            //By default select the entire screen
+            this.selected_source_id = sources[0].id;
+            this.handleSource();
         },
         //---------------------------------------------------------------------
         saveScreenshot()
@@ -292,6 +291,13 @@ export const useRootStore = defineStore({
                         v => v.original_name === data.media.original_name,
                     { status: 'Completed', uploaded : true })
             });
+
+            this.socket.on('video-error', (data) => {
+                console.log('Video Error...', data);
+                this.videos = this.updateObjectInArray(this.videos,
+                        v => v.original_name === data.media.original_name,
+                    { status: 'Error', uploaded : false })
+            });
         },
         //---------------------------------------------------------------------
         takeScreenshot()
@@ -321,15 +327,18 @@ export const useRootStore = defineStore({
             }
         },
         //---------------------------------------------------------------------
-        handleStream(stream)
-        {
-            //@TODO : Sometimes the video element is not available, so temporarily using setTimeout, need to fix this
-            setTimeout(() => {
-                const video = document.querySelector('video')
-                video.srcObject = stream
-                video.onloadedmetadata = (e) => video.play()
-                this.video = video
-            }, 0)
+        handleStream(stream) {
+            const initializeVideo = () => {
+                const video = document.querySelector('video');
+                if (video) {
+                    video.srcObject = stream;
+                    video.onloadedmetadata = (e) => video.play();
+                    this.video = video;
+                } else {
+                    setTimeout(initializeVideo, 100); // Retry after 100ms if video element is not available yet
+                }
+            };
+            initializeVideo();
         },
         //---------------------------------------------------------------------
         handleError(e)
@@ -415,6 +424,7 @@ export const useRootStore = defineStore({
         //---------------------------------------------------------------------
         saveSocketSettings()
         {
+            this.socket_url = this.socket_url.trim().replace(/\/$/, '');
             this.saveSettings({
                 socket_url: this.socket_url,
                 company_id: this.company_id

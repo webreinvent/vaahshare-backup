@@ -21,7 +21,8 @@ const settings = require('electron-settings');
 
 // @ts-ignore
 let win: BrowserWindow | null
-const baseURL = import.meta.env.VITE_API_URL;
+const env = import.meta.env.VITE_APP_ENV || 'production';
+const baseURL = env === 'development' ? import.meta.env.VITE_DEV_API_URL : import.meta.env.VITE_PROD_API_URL;
 const mediaApi = new MediaApi(baseURL);
 const clientsApi = new ClientsApi(baseURL);
 const alertsApi = new AlertsApi(baseURL);
@@ -57,6 +58,10 @@ ipcMain.handle('get-machine-info', async () => {
 ipcMain.on('update-window-title', (_ : any, title : any) => {
     const updated_title = `${getAppInfo().name} - ${title}`
     win?.setTitle(updated_title);
+});
+
+ipcMain.handle('get-sources', async () => {
+    return getSources();
 });
 
 // The built directory structure
@@ -112,10 +117,6 @@ app.on('ready', async () => {
       //getAssets
       const assets = await clientsApi.getAssets();
       win?.webContents.send('assets', assets.data);
-
-      //get sources
-      const sources = await getSources();
-      win?.webContents.send('sources', sources);
 
       //get machine info
       const machineInfo = getMachineInfo();
@@ -194,6 +195,7 @@ ipcMain.on('save-settings', async (_ : any, data : any) => {
             message: 'Settings saved successfully. App will restart now.',
             buttons: ['OK']
         }).then(() => {
+            win?.webContents.send('app-closed');
             //Restart only works in production
             app.relaunch();
             app.exit();
@@ -207,8 +209,12 @@ ipcMain.on('delete-settings', async (_ : any, key : any) => {
 });
 
 ipcMain.on('check-local-sessions', async (_ : any, data : any) => {
-    console.log('Cheking local sessions');
-    videoUpload.checkLocalSessions(data);
+    console.log('Checking local sessions');
+    try {
+        await videoUpload.checkLocalSessions(data);
+    } catch (error) {
+        console.error('Something went wrong');
+    }
 });
 
 ipcMain.on('toggle-idle-time-dialog', (_ : any, data : any) => {

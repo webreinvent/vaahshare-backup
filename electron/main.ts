@@ -21,7 +21,8 @@ const settings = require('electron-settings');
 
 // @ts-ignore
 let win: BrowserWindow | null
-const baseURL = import.meta.env.VITE_API_URL;
+const env = import.meta.env.VITE_APP_ENV || 'production';
+const baseURL = env === 'development' ? import.meta.env.VITE_DEV_API_URL : import.meta.env.VITE_PROD_API_URL;
 const mediaApi = new MediaApi(baseURL);
 const clientsApi = new ClientsApi(baseURL);
 const alertsApi = new AlertsApi(baseURL);

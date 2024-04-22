@@ -27,12 +27,12 @@ const routes = [
             {
                 path: '/settings',
                 name: 'settings',
-                component: () => Settings,
+                component: Settings,
             },
             {
                 path: '/debug',
                 name: 'debug',
-                component: () => Debug,
+                component: Debug,
                 beforeEnter: (to, from, next) => {
                     if (import.meta.env.VITE_APP_ENV === 'production') {
                         next({ name: 'home' });

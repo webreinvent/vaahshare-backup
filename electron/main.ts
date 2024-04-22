@@ -209,8 +209,12 @@ ipcMain.on('delete-settings', async (_ : any, key : any) => {
 });
 
 ipcMain.on('check-local-sessions', async (_ : any, data : any) => {
-    console.log('Cheking local sessions');
-    videoUpload.checkLocalSessions(data);
+    console.log('Checking local sessions');
+    try {
+        await videoUpload.checkLocalSessions(data);
+    } catch (error) {
+        console.error('Something went wrong');
+    }
 });
 
 ipcMain.on('toggle-idle-time-dialog', (_ : any, data : any) => {

@@ -23,6 +23,7 @@ const store = useRootStore();
             />
           </div>
           <Button class="button mt-3" type="submit">Save</Button>
+          <Button class="button ml-3"  @click="store.navigate('home')">Back</Button>
         </form>
       </template>
     </Card>

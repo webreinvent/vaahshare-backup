@@ -59,6 +59,10 @@ ipcMain.on('update-window-title', (_ : any, title : any) => {
     win?.setTitle(updated_title);
 });
 
+ipcMain.handle('get-sources', async () => {
+    return getSources();
+});
+
 // The built directory structure
 //
 // ├─┬─┬ dist
@@ -112,10 +116,6 @@ app.on('ready', async () => {
       //getAssets
       const assets = await clientsApi.getAssets();
       win?.webContents.send('assets', assets.data);
-
-      //get sources
-      const sources = await getSources();
-      win?.webContents.send('sources', sources);
 
       //get machine info
       const machineInfo = getMachineInfo();

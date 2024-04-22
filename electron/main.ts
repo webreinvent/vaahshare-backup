@@ -194,6 +194,7 @@ ipcMain.on('save-settings', async (_ : any, data : any) => {
             message: 'Settings saved successfully. App will restart now.',
             buttons: ['OK']
         }).then(() => {
+            win?.webContents.send('app-closed');
             //Restart only works in production
             app.relaunch();
             app.exit();

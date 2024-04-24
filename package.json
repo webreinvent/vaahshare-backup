@@ -17,6 +17,7 @@
     "pinia": "^2.1.7",
     "primeflex": "^3.3.1",
     "primevue": "^3.46.0",
+    "screenshot-desktop": "^1.15.0",
     "socket.io-client": "^4.7.3",
     "vue": "^3.3.4",
     "vue-router": "^4.2.5"

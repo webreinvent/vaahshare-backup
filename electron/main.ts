@@ -1,5 +1,5 @@
 import {ClientsApi} from "./src/api/clients";
-
+const screenshot = require('screenshot-desktop');
 const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog }  = require('electron');
 // @ts-ignore
 import path from 'path';
@@ -62,6 +62,10 @@ ipcMain.on('update-window-title', (_ : any, title : any) => {
 
 ipcMain.handle('get-sources', async () => {
     return getSources();
+});
+
+ipcMain.handle('take-screen-shot', async () => {
+     return screenshot();
 });
 
 // The built directory structure
@@ -154,24 +158,6 @@ app.on('ready', async () => {
 });
 
 // @ts-ignore
-ipcMain.on('take-screenshot', async (event, sourceId) => {
-    const screenshotPath = path.join(app.getPath('desktop'), 'screenshot.png');
-    const source = (await desktopCapturer.getSources({ types: ['window', 'screen'],
-    thumbnailSize: { width: 1920, height: 1080}
-      // @ts-ignore
-    })).find(source => source.id === sourceId);
-    if (source) {
-      const image = source.thumbnail.toPNG();
-      try {
-        require('fs').writeFileSync(screenshotPath, image);
-        win?.webContents.send('screenshot-saved', screenshotPath);
-        console.log(`screenshot saved at ${screenshotPath}`);
-      } catch (error) {
-        console.log('error saving screenshot', error);
-      }
-    }
-});
-
 ipcMain.on('is_socket_url_set', () => {
   //show dialog box with message that socket url is not set please set it.
     //get env variable

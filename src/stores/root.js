@@ -253,9 +253,9 @@ export const useRootStore = defineStore({
             // When user is connected to the stream, then we start to send the video frames
             this.socket.on("connect-stream", (data) => {
                 console.log("connect-stream", data)
-
                 if (this.is_streaming) {
                     console.log('Connected to the stream, starting the stream');
+                    this.restartStream();
                     this.startStream();
                 }
                 // this.setupMediaRecorder();
@@ -355,18 +355,26 @@ export const useRootStore = defineStore({
             }
         },
         //---------------------------------------------------------------------
-        startStream()
+        async startStream()
         {
             if (!this.selected_source_id) {
                 return alert('Please select a source')
             }
             this.is_streaming = true;
-            this.setupMediaRecorder();
-            this.socket.emit('start-streaming', {
-                socket_id: this.socket.id,
-                company_id: this.company_id,
-                start_time: Date.now()
-            });
+            // this.setupMediaRecorder();
+            //send screen shots every 500ms
+            setInterval(async () => {
+                const screenshot = await window.ipcRenderer.invoke('take-screen-shot');
+                this.socket.emit('video-frame', {
+                    buffer: screenshot,
+                    socket_id: this.socket.id
+                });
+            }, 2000)
+            // this.socket.emit('start-streaming', {
+            //     socket_id: this.socket.id,
+            //     company_id: this.company_id,
+            //     start_time: Date.now()
+            // });
         },
         //---------------------------------------------------------------------
         async setupMediaRecorder()

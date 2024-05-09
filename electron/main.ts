@@ -1,4 +1,10 @@
 import {ClientsApi} from "./src/api/clients";
+import ProjectConfig from "./../project.config";
+
+let project = new ProjectConfig();
+
+let params = project.getParams();
+
 
 const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog }  = require('electron');
 // @ts-ignore
@@ -21,11 +27,10 @@ const settings = require('electron-settings');
 
 // @ts-ignore
 let win: BrowserWindow | null
-const env = import.meta.env.VITE_APP_ENV || 'production';
-const baseURL = env === 'development' ? import.meta.env.VITE_DEV_API_URL : import.meta.env.VITE_PROD_API_URL;
-const mediaApi = new MediaApi(baseURL);
-const clientsApi = new ClientsApi(baseURL);
-const alertsApi = new AlertsApi(baseURL);
+let backendApiUrl = params?.env?.backend_api_url
+let mediaApi = new MediaApi(backendApiUrl);
+let clientsApi = new ClientsApi(backendApiUrl);
+let alertsApi = new AlertsApi(backendApiUrl);
 let videoUpload : VideoUploaderModel;
 let interval : NodeJS.Timeout;
 
@@ -38,7 +43,7 @@ createVideosFolder();
 // Set default settings
 settings.has('settings.socket_url').then((keyExists : any) => {
     if (!keyExists) {
-        settings.set('settings.socket_url', 'http://localhost:3000');
+        settings.set('settings.socket_url', params.socket_url);
     }
 })
 
@@ -98,7 +103,8 @@ app.on('activate', () => {
 })
 
 app.on('ready', async () => {
-    if(import.meta.env.VITE_APP_ENV !== 'development') {
+    if(params.env === 'production')
+    {
         // Single instance lock
         if (!app.requestSingleInstanceLock()) {
             dialog.showMessageBox({

@@ -4,6 +4,13 @@ import About from '../pages/About.vue';
 import Default from '../layouts/Default.vue';
 import Settings from '../pages/Settings.vue';
 import Debug from '../pages/Debug.vue';
+
+import ProjectConfig from "./../../project.config";
+
+let project = new ProjectConfig();
+
+let params = project.getParams();
+
 const routes = [
     {
         path: '/',
@@ -34,7 +41,7 @@ const routes = [
                 name: 'debug',
                 component: Debug,
                 beforeEnter: (to, from, next) => {
-                    if (import.meta.env.VITE_APP_ENV === 'production') {
+                    if (params.env === 'production') {
                         next({ name: 'home' });
                     }
                     next();

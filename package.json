@@ -6,7 +6,7 @@
   "version": "0.0.7",
   "scripts": {
     "dev": "vite",
-    "dev-pk-mac": "cross-env NODE_PROJECT_ENV=pk_mac vite",
+    "dev-pk-mac": "vite --mode=pk_mac",
     "build": "vue-tsc && vite build && electron-builder",
     "preview": "vite preview",
     "dev-electron": "cross-env host='electron' vite"

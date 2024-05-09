@@ -17,9 +17,9 @@ class ProjectConfig {
 //--------------------------------------------
     setParams() {
 
-        this.params.env = process.env.NODE_PROJECT_ENV || 'local';
+        this.params.env = import.meta.env.MODE || 'local';
 
-        switch (process.env.NODE_PROJECT_ENV) {
+        switch (this.params.env ) {
             case 'local':
                 break;
             case 'pk_mac':

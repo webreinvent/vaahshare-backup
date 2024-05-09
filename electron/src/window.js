@@ -2,6 +2,13 @@ const { app, BrowserWindow, desktopCapturer, ipcMain, Menu, dialog }  = require(
 import path from 'node:path'
 import os from 'os'
 
+import ProjectConfig from "./../../project.config";
+
+let project = new ProjectConfig();
+
+let params = project.getParams();
+
+
 let win = null
 
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
@@ -15,7 +22,7 @@ export const createWindow = () => {
             nodeIntegration: true,
         },
     })
-    if(import.meta.env.VITE_APP_ENV !== 'production') {
+    if(params.env !== 'production') {
         win.webContents.openDevTools()
     }
 

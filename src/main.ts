@@ -126,6 +126,8 @@ app.mount('#app').$nextTick(() => {
 
   // Use contextBridge
   window.ipcRenderer.on('main-process-message', (_event, message) => {
-    console.log(message)
+    console.log('main-process-message--->', message)
   })
+
+
 })

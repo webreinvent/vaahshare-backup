@@ -76,7 +76,7 @@ export class VideoUploader {
         const blob = new Blob([file], { type: 'video/webm' });
 
         formData.append('socket_id', data.socket_id);
-        formData.append('company_id', data.company_id);
+        formData.append('company_slug', data.company_slug);
         formData.append('file', blob, fileName);
 
         try {

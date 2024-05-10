@@ -83,7 +83,6 @@ process.env.VITE_PUBLIC = app.isPackaged ? process.env.DIST : path.join(process.
 
 
 
-
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
@@ -103,6 +102,9 @@ app.on('activate', () => {
 })
 
 app.on('ready', async () => {
+
+
+
     if(params.env === 'production')
     {
         // Single instance lock
@@ -141,7 +143,7 @@ app.on('ready', async () => {
 
 
     //When the app is closed
-    win?.on('close', (e : any) => {
+    /*win?.on('close', (e : any) => {
         e.preventDefault();
         dialog.showMessageBox(win, {
             type: 'question',
@@ -155,7 +157,7 @@ app.on('ready', async () => {
                 app.exit();
             }
         });
-    });
+    });*/
 
 });
 

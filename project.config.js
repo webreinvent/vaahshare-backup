@@ -7,6 +7,7 @@ class ProjectConfig {
             log_level: 'info',
             socket_url: 'http://localhost:3000',
             backend_api_url: null,
+            company_slug: 'unknown',
         }
 
     }
